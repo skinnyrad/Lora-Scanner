@@ -20,7 +20,7 @@
 
         <!-- Include SweetAlert2 JS -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 
     </head>
     <body id="page-top">
@@ -45,52 +45,46 @@
             <!-- About-->
             <section class="resume-section" id="about">
                 <div class="resume-section-content">
-                    <h1 class="mb-0">
+                    <h1 class="mb-0" style="text-align: center;">
                         Survey Mode
                     </h1>
-                    <h2 class="lead mb-5">Skinny Research and Development</h2>
-                </div>
-                <!DOCTYPE html>
-<html>
-<head>
-    <title>DataFrame Table</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 80%;
-            margin: auto;
-        }
-        th, td {
-            border: 1px solid #dddddd;
-            text-align: left;
-            padding: 8px;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
-        <table>
-            <thead>
-                <tr>
-                    <th>Device Name</th>
-                    <th>Frequency</th>
-                    <th>Signal Strength</th>
-                    <th>Plaintext</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for index, row in data.iterrows() %}
-                    <tr>
-                        <td>{{ row['Device Name'] }}</td>
-                        <td>{{ row['Frequency'] }}</td>
-                        <td>{{ row['Signal Strength'] }}</td>
-                        <td>{{ row['Plaintext'] }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-
+                    <br>
+                    <div class="scrollable-table">
+                        <table id="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Device Name</th>
+                                    <th>Frequency</th>
+                                    <th>Signal Strength</th>
+                                    <th>Recovered Plaintext</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                
+                    <script>
+                        // Fetch data from Flask route
+                        fetch('/get_table_data')
+                            .then(response => response.json())
+                            .then(data => {
+                                const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                                for (let key in data) {
+                                    let row = tableBody.insertRow();
+                                    let cell1 = row.insertCell();
+                                    let cell2 = row.insertCell();
+                                    let cell3 = row.insertCell();
+                                    let cell4 = row.insertCell();
+                                    cell1.innerHTML = key;
+                                    cell2.innerHTML = data[key][0];
+                                    cell3.innerHTML = data[key][1];
+                                    cell4.innerHTML = data[key][2];
+                                }
+                            })
+                            .catch(error => console.error('Error:', error));
+                    </script>
             </section>
             <hr class="m-0" />
             

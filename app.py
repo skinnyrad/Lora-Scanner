@@ -19,25 +19,27 @@ global ser2
 global ser3
 global_dataframe = pd.DataFrame(columns=['Device Name', 'Frequency', 'Signal Strength', 'Plaintext'])
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
-
+surveydata = {'Test Device': [915, -20, 'Some Plaintext information'],}
 
 def read_serial_data(port, ser, buffer):
-    global global_dataframe
+    global surveydata
     while True:
         try:
             if ser.in_waiting > 0:
                 data = ser.readline().decode('utf-8').strip()
                 buffer.append(data)
-                socketio.emit(f'serial_data_{port}', {'data': data})
+                socketio.emit(f'serial_data_{port}', {'data': data})  
                 
-                
-                if (global_dataframe['Device Name'] ==  'Unknown Raw LoRa Devices').any():
-                    pass
-                else:
-                    pandasdata = {'Device Name': 'Unknown Raw LoRa Devices', 'Frequency': frequency(port)}
-                    global_dataframe = global_dataframe.append(pandasdata, ignore_index=True)
-                    '''print(global_dataframe.head())'''
-            
+                if frequency(port) == 433 and surveydata.get('Raw LoRa Device 443 MHz') is None:
+                    surveydata['Raw LoRa Device 443 MHz'] = [433,0,'']
+
+                elif frequency(port) == 868 and surveydata.get('Raw LoRa Device 868 MHz') is None:
+                    surveydata['Raw LoRa Device 868 MHz'] = [868,0,'']
+
+                elif frequency(port) == 915 and surveydata.get('Raw LoRa Device 915 MHz') is None:
+                    surveydata['Raw LoRa Device 915 MHz'] = [915,0,'']
+
+
             if (port == 'port1' and port1_status == False):
                 return
             if (port == 'port2' and port2_status == False):
@@ -47,7 +49,7 @@ def read_serial_data(port, ser, buffer):
             time.sleep(0.1)
         except:
             pass
-    
+
 
 def connect_serial(port,frequency):
     global ser1
@@ -114,7 +116,7 @@ def analysis():
 
 @app.route('/survey')
 def survey():
-    return render_template('survey.html', initial_data={port: list(buffer) for port, buffer in serial_buffers.items()})
+    return render_template('survey.html', data=global_dataframe)
 
 @app.route('/tracking')
 def tracking():
@@ -221,8 +223,12 @@ def checkSer():
         except:
             pass
     return jsonify(result="False")
-        
-        
+
+@app.route('/get_table_data')        
+def get_table_data():
+    global surveydata
+    print(surveydata)
+    return jsonify(surveydata)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
