@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+        <title>LoRa Scanner</title>
+        <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico" />
+        <!-- Font Awesome icons (free version)-->
+        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+        <!-- Google fonts-->
+        <link href="https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:500,700" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Muli:400,400i,800,800i" rel="stylesheet" type="text/css" />
+        <!-- Core theme CSS (includes Bootstrap)-->
+        <link href="static/css/styles.css" rel="stylesheet" />
+        <!-- Include SweetAlert2 CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10">
+
+        <!-- Include SweetAlert2 JS -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    </head>
+    <body id="page-top">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top" id="sideNav">
+            <a class="navbar-brand js-scroll-trigger" href="#page-top">
+                <span class="d-block d-lg-none">LoRa Scanner</span>
+                <span class="d-none d-lg-block"><img class="img-fluid img-profile rounded-circle mx-auto mb-2" src="static/assets/img/profile.jpg" alt="..." /></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#">Analysis Mode</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/survey">Survey Mode</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/tracking">Tracking Mode</a></li>
+                </ul>
+            </div>
+        </nav>
+        <!-- Page Content-->
+        <div class="container-fluid p-0">
+            <!-- About-->
+            <section class="resume-section" id="about">
+                <div class="resume-section-content">
+                    <h1 class="mb-0">
+                        Analysis Mode
+                    </h1>
+                    <h2 class="lead mb-5">Skinny Research and Development</h2>
+                    <p>
+                        Analyze LoRa traffic received at 433, 868, or 915 MHz.  Click the desired frequency below to get started.  Once you are on the appropriate page, click the 'Connect Serial Port' button to connect to a serial port on your computer.  Once connected to your LoRa receiver, traffic will automatically be streamed to the web page for analysis.  To disconnect a receiver, click the 'Disconnect Serial Port' button.
+                    </p>
+                    <h2 class="lead mb-5">
+                        <a class="nav-link js-scroll-trigger" href="#433">433 MHz</a>
+                        <br>
+                        <a class="nav-link js-scroll-trigger" href="#868">868 MHz</a>
+                        <br>
+                        <a class="nav-link js-scroll-trigger" href="#915">915 MHz</a>
+                    </h2>
+                </div>
+            </section>
+            <hr class="m-0" />
+            <!-- 433 -->
+            <section class="resume-section" id="433">
+                <div class="resume-section-content">
+                    <h2 class="mb-5">433 MHz</h2>
+                    <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">LoRa Transceiver</h3><br>
+                            <div class="serial-data" id="serial-data-port1">
+                            </div>
+                            <div style="text-align:center;">
+                                <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
+                                <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
+                                <button class="transmit-button" onclick="transmit433()">Transmit Data</button><br>
+                                <p id="status-label433" style="text-align: center">Status: Checking...</p>
+                                <div class="indicator-container">
+                                    <div id="indicator433" class="indicator"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- JavaScript for updating the indicator -->
+                            <script>
+                                function updateIndicator433() {
+                                    // Fetch the status from the Flask route
+                                    $.ajax({
+                                        url: '/checkSer',
+                                        type: 'GET',
+                                        data: {
+                                            port: 'port1',
+                                            
+                                        },
+                                        success: function(response) {
+                                            
+                                            if (response['result'] === 'True') {
+                                                $('#indicator433').removeClass('red').addClass('green');
+                                                $('#status-label433').text('Status: Connected');
+                                            } else {
+                                                $('#indicator433').removeClass('green').addClass('red');
+                                                $('#status-label433').text('Serial Port Status: Disconnected');
+                                            }
+                                        },
+                                        error: function() {
+                                            $('#indicator433').removeClass('green').addClass('red');
+                                            $('#status-label433').text('Serial Port Status: Disconnected');
+                                        }
+                                    });
+                                }
+
+                                // Initial update of the indicator
+                                updateIndicator433();
+
+                                // Periodically check and update the indicator (e.g., every 5 seconds)
+                                setInterval(updateIndicator433, 5000);
+                            </script>
+                            <script type="text/javascript">
+                                var socket = io.connect('http://' + document.domain + ':' + location.port);
+                            
+                                // For port1
+                                socket.on('initial_serial_data_port1', function(data) {
+                                    var serialDataDiv = document.getElementById('serial-data-port1');
+                                    data.data.forEach(function(line) {
+                                        serialDataDiv.innerHTML += line + '<br>';
+                                    });
+                                    // Scroll to the bottom for new data
+                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                });
+                            
+                                socket.on('serial_data_port1', function(data) {
+                                    var serialDataDiv = document.getElementById('serial-data-port1');
+                                    serialDataDiv.innerHTML += data.data + '<br>';
+                                    // Scroll to the bottom for new data
+                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                });
+                                </script>
+
+                                <script>
+                                    function promptUser433() {
+                                        Swal.fire({
+                                            title: 'Serial Port:',
+                                            input: 'text',
+                                            inputAttributes: {
+                                                autocapitalize: 'off'
+                                            },
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Submit',
+                                            cancelButtonText: 'Cancel',
+                                            showLoaderOnConfirm: true,
+                                            preConfirm: (value) => {
+                                                // Make an AJAX request to Flask
+                                                fetch(`/attach_serial_433?user_input=${encodeURIComponent(value)}`)
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        Swal.fire({
+                                                            title: 'Result',
+                                                            text: data.result,
+                                                            icon: 'info'
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                        Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                                    });
+                                            },
+                                            allowOutsideClick: () => !Swal.isLoading()
+                                        });
+                                    }
+                                </script>
+
+                                <script>
+                                    function deleteSerial433() {
+                                        Swal.fire({
+                                            title: 'Are you sure you want to disconnect the 433 MHz port?',
+                                            icon: 'question',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Yes',
+                                            cancelButtonText: 'No',
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                // User clicked "Yes" - Send HTTP GET request to Flask
+                                                fetch('/delete_serial_433')
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        Swal.fire({
+                                                            title: 'Confirmation Result',
+                                                            text: data.result,
+                                                            icon: 'info'
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                        Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                                    });
+                                            }
+                                        });
+                                    }
+                                </script>
+                                <script>
+                                    function transmit433() {
+                                        Swal.fire({
+                                            title: 'Enter data to transmit:',
+                                            input: 'text',
+                                            inputAttributes: {
+                                                autocapitalize: 'off'
+                                            },
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Submit',
+                                            cancelButtonText: 'Cancel',
+                                            showLoaderOnConfirm: true,
+                                            preConfirm: (value) => {
+                                                // Make an HTTP POST request to Flask
+                                                return fetch('/transmit433', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({ user_input: value })
+                                                })
+                                                .then(response => response.json())
+                                                .catch(error => {
+                                                    console.error('Error:', error);
+                                                    Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
+                                                });
+                                            },
+                                            allowOutsideClick: () => !Swal.isLoading()
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                Swal.fire({
+                                                    title: 'Data Transmitted',
+                                                    icon: 'info'
+                                                });
+                                            }
+                                        });
+                                    }
+                                </script>
+                                
+                                
+
+            </section>
+            <hr class="m-0" />
+            <!-- 868 -->
+            <section class="resume-section" id="868">
+                <div class="resume-section-content">
+                    <h2 class="mb-5">868 MHz</h2>
+                    <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">LoRa Transceiver</h3><br>
+                            <div class="serial-data" id="serial-data-port2">
+                            </div>
+                            <div style="text-align:center;">
+                                <button class="styled-button" onclick="promptUser868()">Connect Serial Port</button>
+                                <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Serial Port</button>
+                                <button class="transmit-button" onclick="transmit868()">Transmit Data</button><br>
+                                <p id="status-label868" style="text-align: center">Status: Checking...</p>
+                                <div class="indicator-container">
+                                    <div id="indicator868" class="indicator"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <script>
+                                function updateIndicator868() {
+                                    // Fetch the status from the Flask route
+                                    $.ajax({
+                                        url: '/checkSer',
+                                        type: 'GET',
+                                        data: {
+                                            port: 'port2',
+                                            
+                                        },
+                                        success: function(response) {
+                                            
+                                            if (response['result'] === 'True') {
+                                                $('#indicator868').removeClass('red').addClass('green');
+                                                $('#status-label868').text('Status: Connected');
+                                            } else {
+                                                $('#indicator868').removeClass('green').addClass('red');
+                                                $('#status-label868').text('Serial Port Status: Disconnected');
+                                            }
+                                        },
+                                        error: function() {
+                                            $('#indicator868').removeClass('green').addClass('red');
+                                            $('#status-label868a').text('Serial Port Status: Disconnected');
+                                        }
+                                    });
+                                }
+
+                                // Initial update of the indicator
+                                updateIndicator868();
+
+                                // Periodically check and update the indicator (e.g., every 5 seconds)
+                                setInterval(updateIndicator868, 5000);
+                            </script>
+                            <script type="text/javascript">
+                                var socket = io.connect('http://' + document.domain + ':' + location.port);
+                            
+                                // For port1
+                                socket.on('initial_serial_data_port1', function(data) {
+                                    var serialDataDiv = document.getElementById('serial-data-port1');
+                                    data.data.forEach(function(line) {
+                                        serialDataDiv.innerHTML += line + '<br>';
+                                    });
+                                    // Scroll to the bottom for new data
+                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                });
+                            
+                                socket.on('serial_data_port1', function(data) {
+                                    var serialDataDiv = document.getElementById('serial-data-port1');
+                                    serialDataDiv.innerHTML += data.data + '<br>';
+                                    // Scroll to the bottom for new data
+                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                });
+                                </script>
+
+                        <script>
+                            // For port2
+                            socket.on('initial_serial_data_port2', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port2');
+                                data.data.forEach(function(line) {
+                                    serialDataDiv.innerHTML += line + '<br>';
+                                });
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        
+                            socket.on('serial_data_port2', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port2');
+                                serialDataDiv.innerHTML += data.data + '<br>';
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        </script>
+
+                        <script>
+                            function promptUser868() {
+                                Swal.fire({
+                                    title: 'Serial Port:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        // Make an AJAX request to Flask
+                                        fetch(`/attach_serial_868?user_input=${encodeURIComponent(value)}`)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                });
+                            }
+                        </script>
+
+                        <script>
+                            function deleteSerial868() {
+                                Swal.fire({
+                                    title: 'Are you sure you want to disconnect the 868 MHz port?',
+                                    icon: 'question',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Yes',
+                                    cancelButtonText: 'No',
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        // User clicked "Yes" - Send HTTP GET request to Flask
+                                        fetch('/delete_serial_868')
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Confirmation Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    }
+                                });
+                            }
+                        </script>
+
+                        <script>
+                            function transmit868() {
+                                Swal.fire({
+                                    title: 'Enter data to transmit:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        // Make an HTTP POST request to Flask
+                                        return fetch('/transmit868', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({ user_input: value })
+                                        })
+                                        .then(response => response.json())
+                                        .catch(error => {
+                                            console.error('Error:', error);
+                                            Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
+                                        });
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        Swal.fire({
+                                            title: 'Data Transmitted',
+                                            icon: 'info'
+                                        });
+                                    }
+                                });
+                            }
+                        </script>
+            </section>
+            <hr class="m-0" />
+            <!-- 915-->
+            <section class="resume-section" id="915">
+                <div class="resume-section-content">
+                    <h2 class="mb-5">915 MHz</h2><br>
+                    <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">LoRa Transceiver</h3><br>
+                            <div class="serial-data" id="serial-data-port3">
+                            </div>
+                            <div style="text-align:center;">
+                                <button class="styled-button" onclick="promptUser915()">Connect Serial Port</button>
+                                <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Serial Port</button>
+                                <button class="transmit-button" onclick="transmit915()">Transmit Data</button><br>
+                                <p id="status-label915" style="text-align: center">Status: Checking...</p>
+                                <div class="indicator-container">
+                                    <div id="indicator915" class="indicator"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <script>
+                            function updateIndicator915() {
+                                // Fetch the status from the Flask route
+                                $.ajax({
+                                    url: '/checkSer',
+                                    type: 'GET',
+                                    data: {
+                                        port: 'port3',
+                                        
+                                    },
+                                    success: function(response) {
+                                        
+                                        if (response['result'] === 'True') {
+                                            $('#indicator915').removeClass('red').addClass('green');
+                                            $('#status-label915').text('Status: Connected');
+                                        } else {
+                                            $('#indicator915').removeClass('green').addClass('red');
+                                            $('#status-label915').text('Serial Port Status: Disconnected');
+                                        }
+                                    },
+                                    error: function() {
+                                        $('#indicator915').removeClass('green').addClass('red');
+                                        $('#status-label915').text('Serial Port Status: Disconnected');
+                                    }
+                                });
+                            }
+
+                            // Initial update of the indicator
+                            updateIndicator915();
+
+                            // Periodically check and update the indicator (e.g., every 5 seconds)
+                            setInterval(updateIndicator915, 5000);
+                        </script>
+                        <script>
+                            // For port3
+                            socket.on('initial_serial_data_port3', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port3');
+                                data.data.forEach(function(line) {
+                                    serialDataDiv.innerHTML += line + '<br>';
+                                });
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        
+                            socket.on('serial_data_port3', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port3');
+                                serialDataDiv.innerHTML += data.data + '<br>';
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        </script>
+
+                        <script>
+                            function promptUser915() {
+                                Swal.fire({
+                                    title: 'Serial Port:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        // Make an AJAX request to Flask
+                                        fetch(`/attach_serial_915?user_input=${encodeURIComponent(value)}`)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                });
+                            }
+                        </script>
+
+                        <script>
+                            function deleteSerial915() {
+                                Swal.fire({
+                                    title: 'Are you sure you want to disconnect the 915 MHz port?',
+                                    icon: 'question',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Yes',
+                                    cancelButtonText: 'No',
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        // User clicked "Yes" - Send HTTP GET request to Flask
+                                        fetch('/delete_serial_915')
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Confirmation Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    }
+                                });
+                            }
+                        </script>
+                        <script>
+                            function transmit915() {
+                                Swal.fire({
+                                    title: 'Enter data to transmit:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        // Make an HTTP POST request to Flask
+                                        return fetch('/transmit915', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({ user_input: value })
+                                        })
+                                        .then(response => response.json())
+                                        .catch(error => {
+                                            console.error('Error:', error);
+                                            Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
+                                        });
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        Swal.fire({
+                                            title: 'Data Transmitted',
+                                            icon: 'info'
+                                        });
+                                    }
+                                });
+                            }
+                        </script>
+                        
+            </section>
+        </div>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="static/js/scripts.js"></script>
+    </body>
+</html>
