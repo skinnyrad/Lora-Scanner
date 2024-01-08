@@ -6,6 +6,7 @@ import threading
 import time
 from collections import deque
 import pandas as pd
+import re
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -21,23 +22,40 @@ global_dataframe = pd.DataFrame(columns=['Device Name', 'Frequency', 'Signal Str
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {'Test Device': [915, -20, 'Some Plaintext information'],}
 
+
 def read_serial_data(port, ser, buffer):
     global surveydata
+    rssi_pattern = r"RSSI: (-?\d+)"
+    rssi = ''
+
     while True:
         try:
             if ser.in_waiting > 0:
                 data = ser.readline().decode('utf-8').strip()
+                match = re.search(rssi_pattern, data)
+
+                # Check if a RSSI was found
+                if match:
+                    if port =='port1':
+                        rssi = int(match.group(1))
+                        surveydata['Raw LoRa Device 443 MHz'] = [433,rssi,'']
+                    elif port =='port2':
+                        rssi = int(match.group(1))
+                        surveydata['Raw LoRa Device 868 MHz'] = [868,rssi,'']
+                    elif port =='port3':
+                        rssi = int(match.group(1))
+                        surveydata['Raw LoRa Device 915 MHz'] = [915,rssi,'']
+
                 buffer.append(data)
                 socketio.emit(f'serial_data_{port}', {'data': data})  
-                
                 if frequency(port) == 433 and surveydata.get('Raw LoRa Device 443 MHz') is None:
-                    surveydata['Raw LoRa Device 443 MHz'] = [433,0,'']
+                    surveydata['Raw LoRa Device 443 MHz'] = [433,0,rssi]
 
                 elif frequency(port) == 868 and surveydata.get('Raw LoRa Device 868 MHz') is None:
-                    surveydata['Raw LoRa Device 868 MHz'] = [868,0,'']
+                    surveydata['Raw LoRa Device 868 MHz'] = [868,0,rssi]
 
                 elif frequency(port) == 915 and surveydata.get('Raw LoRa Device 915 MHz') is None:
-                    surveydata['Raw LoRa Device 915 MHz'] = [915,0,'']
+                    surveydata['Raw LoRa Device 915 MHz'] = [915,0,rssi]
 
 
             if (port == 'port1' and port1_status == False):
