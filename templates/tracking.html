@@ -331,27 +331,34 @@
                                             cancelButtonText: 'Cancel',
                                             showLoaderOnConfirm: true,
                                             preConfirm: (value) => {
-                                                return startTransmission(value);
+                                                return startTransmission433(value); // Call the function to start transmission
                                             },
                                             allowOutsideClick: () => !Swal.isLoading()
                                         }).then((result) => {
                                             if (result.isConfirmed) {
                                                 Swal.fire({
-                                                    title: 'Starting Beacon!',
-                                                    icon: 'info'
+                                                    title: 'Transmission Started!',
+                                                    icon: 'success'
                                                 });
                                             }
                                         });
                                     }
 
-                                    function startTransmission(data) {
-                                        if (transmitIntervalID433) {
-                                            clearInterval(transmitIntervalId); // Clear existing interval
-                                        }
-                                        transmitIntervalId = setInterval(() => {
-                                            sendTransmissionData(data);
-                                        }, 10000); // Call every 10 seconds
 
+                                    function startTransmission433(data) {
+                                        if (transmitIntervalId433) {
+                                            clearInterval(transmitIntervalId433); // Clear existing interval
+                                        }
+                                        transmitIntervalId433 = setInterval(() => {
+                                            sendTransmissionData433(data);
+                                        }, 10000); // Transmit data every 10 seconds
+
+                                        // Send the first transmission immediately
+                                        return sendTransmissionData433(data);
+                                    }
+
+
+                                    function sendTransmissionData433(data) {
                                         return fetch('/transmit433', {
                                             method: 'POST',
                                             headers: {
@@ -359,35 +366,24 @@
                                             },
                                             body: JSON.stringify({ user_input: data })
                                         })
-                                        .then(response => response.json())
-                                        .catch(error => {
-                                            console.error('Error:', error);
-                                            Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
-                                        });
-                                    }
-
-                                    function sendTransmissionData(data) {
-                                        fetch('/transmit433', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json'
-                                            },
-                                            body: JSON.stringify({ user_input: data })
-                                        })
-                                        .then(response => response.json())
-                                        .catch(error => {
-                                            console.error('Error:', error);
-                                            Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
-                                            if (transmitIntervalId) {
-                                                clearInterval(transmitIntervalId); // Stop the interval if there is an error
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                throw new Error('Network response was not ok');
                                             }
+                                            return response.json();
+                                        })
+                                        .catch(error => {
+                                            console.error('Error:', error);
+                                            Swal.fire('Error', 'Transmission failed: ' + error.message, 'error');
+                                            clearInterval(transmitIntervalId433); // Stop the interval on error
                                         });
                                     }
 
-                                    function stopTransmission() {
-                                        if (transmitIntervalId) {
-                                            clearInterval(transmitIntervalId);
-                                            transmitIntervalId = null;
+
+                                    function stopTransmission433() {
+                                        if (transmitIntervalId433) {
+                                            clearInterval(transmitIntervalId433);
+                                            transmitIntervalId433 = null;
                                             Swal.fire('Transmission Stopped', '', 'info');
                                         }
                                     }
@@ -403,7 +399,7 @@
                                             confirmButtonText: 'Yes, stop it!'
                                         }).then((result) => {
                                             if (result.isConfirmed) {
-                                                stopTransmission();
+                                                stopTransmission433();
                                             }
                                         });
                                     }
@@ -581,27 +577,34 @@
                                     cancelButtonText: 'Cancel',
                                     showLoaderOnConfirm: true,
                                     preConfirm: (value) => {
-                                        return startTransmission868(value);
+                                        return startTransmission868(value); // Call the function to start transmission
                                     },
                                     allowOutsideClick: () => !Swal.isLoading()
                                 }).then((result) => {
                                     if (result.isConfirmed) {
                                         Swal.fire({
-                                            title: 'Starting Beacon!',
-                                            icon: 'info'
+                                            title: 'Transmission Started!',
+                                            icon: 'success'
                                         });
                                     }
                                 });
                             }
 
+
                             function startTransmission868(data) {
-                                if (transmitIntervalID868) {
+                                if (transmitIntervalId868) {
                                     clearInterval(transmitIntervalId868); // Clear existing interval
                                 }
                                 transmitIntervalId868 = setInterval(() => {
                                     sendTransmissionData868(data);
-                                }, 10000); // Call every 10 seconds
+                                }, 10000); // Transmit data every 10 seconds
 
+                                // Send the first transmission immediately
+                                return sendTransmissionData868(data);
+                            }
+
+
+                            function sendTransmissionData868(data) {
                                 return fetch('/transmit868', {
                                     method: 'POST',
                                     headers: {
@@ -609,30 +612,19 @@
                                     },
                                     body: JSON.stringify({ user_input: data })
                                 })
-                                .then(response => response.json())
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
                                 .catch(error => {
                                     console.error('Error:', error);
-                                    Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
+                                    Swal.fire('Error', 'Transmission failed: ' + error.message, 'error');
+                                    clearInterval(transmitIntervalId868); // Stop the interval on error
                                 });
                             }
 
-                            function sendTransmissionData868(data) {
-                                fetch('/transmit868', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({ user_input: data })
-                                })
-                                .then(response => response.json())
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
-                                    if (transmitIntervalId868) {
-                                        clearInterval(transmitIntervalId868); // Stop the interval if there is an error
-                                    }
-                                });
-                            }
 
                             function stopTransmission868() {
                                 if (transmitIntervalId868) {
@@ -814,27 +806,34 @@
                                     cancelButtonText: 'Cancel',
                                     showLoaderOnConfirm: true,
                                     preConfirm: (value) => {
-                                        return startTransmission915(value);
+                                        return startTransmission915(value); // Call the function to start transmission
                                     },
                                     allowOutsideClick: () => !Swal.isLoading()
                                 }).then((result) => {
                                     if (result.isConfirmed) {
                                         Swal.fire({
-                                            title: 'Starting Beacon!',
-                                            icon: 'info'
+                                            title: 'Transmission Started!',
+                                            icon: 'success'
                                         });
                                     }
                                 });
                             }
                         
+                        
                             function startTransmission915(data) {
-                                if (transmitIntervalID915) {
+                                if (transmitIntervalId915) {
                                     clearInterval(transmitIntervalId915); // Clear existing interval
                                 }
                                 transmitIntervalId915 = setInterval(() => {
                                     sendTransmissionData915(data);
-                                }, 10000); // Call every 10 seconds
+                                }, 10000); // Transmit data every 10 seconds
                         
+                                // Send the first transmission immediately
+                                return sendTransmissionData915(data);
+                            }
+                        
+                        
+                            function sendTransmissionData915(data) {
                                 return fetch('/transmit915', {
                                     method: 'POST',
                                     headers: {
@@ -842,30 +841,19 @@
                                     },
                                     body: JSON.stringify({ user_input: data })
                                 })
-                                .then(response => response.json())
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
                                 .catch(error => {
                                     console.error('Error:', error);
-                                    Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
+                                    Swal.fire('Error', 'Transmission failed: ' + error.message, 'error');
+                                    clearInterval(transmitIntervalId915); // Stop the interval on error
                                 });
                             }
                         
-                            function sendTransmissionData915(data) {
-                                fetch('/transmit915', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({ user_input: data })
-                                })
-                                .then(response => response.json())
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                    Swal.fire('Oops!', 'Something went wrong. Maybe the serial port is disconnected?', 'error');
-                                    if (transmitIntervalId915) {
-                                        clearInterval(transmitIntervalId915); // Stop the interval if there is an error
-                                    }
-                                });
-                            }
                         
                             function stopTransmission915() {
                                 if (transmitIntervalId915) {
