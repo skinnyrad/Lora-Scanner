@@ -52,25 +52,18 @@
                     <p>
                         Analyze LoRa traffic received at 433, 868, or 915 MHz.  Click the desired frequency below to get started.  Once you are on the appropriate page, click the 'Connect Serial Port' button to connect to a serial port on your computer.  Once connected to your LoRa receiver, traffic will automatically be streamed to the web page for analysis.  To disconnect a receiver, click the 'Disconnect Serial Port' button.
                     </p>
-                    <h2 class="lead mb-5">
-                        <a class="nav-link js-scroll-trigger" href="#433">433 MHz</a>
-                        <br>
-                        <a class="nav-link js-scroll-trigger" href="#868">868 MHz</a>
-                        <br>
-                        <a class="nav-link js-scroll-trigger" href="#915">915 MHz</a>
-                    </h2>
-                </div>
-            </section>
-            <hr class="m-0" />
+                    <hr class="m-0" />
+                    <br><br>
             <!-- 433 -->
-            <section class="resume-section" id="433">
                 <div class="resume-section-content">
-                    <h2 class="mb-5">433 MHz</h2>
+                    <!-- Collapsible content -->
+                    <div class="collapse" id="collapse433">
                     <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
                         <div class="flex-grow-1">
-                            <h3 class="mb-0">LoRa Transceiver</h3><br>
+                            <h3 class="mb-0">433 MHz LoRa Transceiver</h3><br>
                             <div class="serial-data" id="serial-data-port1">
                             </div>
+                            
                             <div style="text-align:center;">
                                 <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
@@ -235,18 +228,20 @@
                                         });
                                     }
                                 </script>
-                                
-                                
-
-            </section>
-            <hr class="m-0" />
-            <!-- 868 -->
-            <section class="resume-section" id="868">
+                        </div>
+                    </div>
+                </div>
+                <!-- Collapsible button -->
+                <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapse433" role="button" aria-expanded="false" aria-controls="collapse433">
+                    Toggle 433 MHz Section
+                </a>
+                </div>
+                <br><br>
                 <div class="resume-section-content">
-                    <h2 class="mb-5">868 MHz</h2>
+                    <div class="collapse" id="collapse868">
                     <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
                         <div class="flex-grow-1">
-                            <h3 class="mb-0">LoRa Transceiver</h3><br>
+                            <h3 class="mb-0">868 MHz LoRa Transceiver</h3><br>
                             <div class="serial-data" id="serial-data-port2">
                             </div>
                             <div style="text-align:center;">
@@ -296,22 +291,17 @@
                             <script type="text/javascript">
                                 var socket = io.connect('http://' + document.domain + ':' + location.port);
                             
-                                // For port1
-                                socket.on('initial_serial_data_port1', function(data) {
-                                    var serialDataDiv = document.getElementById('serial-data-port1');
+                                socket.on('serial_data_port1', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port1');
+                                if (data.data instanceof Array) {
                                     data.data.forEach(function(line) {
                                         serialDataDiv.innerHTML += line + '<br>';
                                     });
-                                    // Scroll to the bottom for new data
-                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
-                                });
-                            
-                                socket.on('serial_data_port1', function(data) {
-                                    var serialDataDiv = document.getElementById('serial-data-port1');
-                                    serialDataDiv.innerHTML += data.data + '<br>';
-                                    // Scroll to the bottom for new data
-                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
-                                });
+                                } 
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+
                                 </script>
 
                         <script>
@@ -433,15 +423,20 @@
                                 });
                             }
                         </script>
-            </section>
-            <hr class="m-0" />
-            <!-- 915-->
-            <section class="resume-section" id="915">
+                        </div>
+                    </div>
+                    <!-- Collapsible button -->
+                    <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapse868" role="button" aria-expanded="false" aria-controls="collapse868">
+                        Toggle 868 MHz Section
+                    </a>
+                </div>
+                <br><br>
+
                 <div class="resume-section-content">
-                    <h2 class="mb-5">915 MHz</h2><br>
+                    <div class="collapse" id="collapse915">
                     <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
                         <div class="flex-grow-1">
-                            <h3 class="mb-0">LoRa Transceiver</h3><br>
+                            <h3 class="mb-0">915 MHZ LoRa Transceiver</h3><br>
                             <div class="serial-data" id="serial-data-port3">
                             </div>
                             <div style="text-align:center;">
@@ -606,8 +601,17 @@
                                 });
                             }
                         </script>
-                        
+                        </div>
+                    </div>
+                    <!-- Collapsible button -->
+                    <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapse915" role="button" aria-expanded="false" aria-controls="collapse915">
+                        Toggle 915 MHz Section
+                    </a>
+                    </div>
+                </div>
             </section>
+
+        
         </div>
         <!-- Bootstrap core JS-->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
