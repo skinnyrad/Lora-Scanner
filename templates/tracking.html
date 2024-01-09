@@ -20,7 +20,8 @@
 
         <!-- Include SweetAlert2 JS -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     </head>
     <body id="page-top">
         <!-- Navigation-->
@@ -35,7 +36,7 @@
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/">Home</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/analysis">Analysis Mode</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/survey">Survey Mode</a></li>
-                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#">Tracking Mode</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/#">Tracking Mode</a></li>
                 </ul>
             </div>
         </nav>
@@ -51,136 +52,847 @@
                     <h2 class="lead mb-5" style="text-align: center;">Select A Device You Would Like To Track</h2>
                     <br>
                     <div class="scrollable-table">
-                        <table id="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Device Name</th>
-                                    <th>Frequency</th>
-                                    <th>Signal Strength</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Rows will be inserted here -->
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <br>
-                    <!-- Add a Clear Selection button with a CSS class -->
-                    <button id="clear-selection-button" class="center-button" style="display: none;">Clear Filter</button>
-                    
-                    <style>
-                        /* CSS styles for centering the button */
-                        .center-button {
-                            display: block;
-                            margin: 0 auto;
-                            text-align: center;
-                        }
+
+                    <div class="resume-section-content">
+                            <table id="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Device Name</th>
+                                        <th>Frequency</th>
+                                        <th>Signal Strength</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Rows will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
                         
-                        /* CSS styles to hide rows */
-                        .hidden-row {
-                            display: none;
-                        }
-                    </style>
-                    
-                    <script>
-                        let selectedDeviceName = null; // Global variable to store the selected device name
-                        let dataCache = {}; // Cache for storing fetched data
-                    
-                        function updateTableData() {
-                            fetch('/get_table_data')
-                                .then(response => response.json())
-                                .then(data => {
-                                    dataCache = data; // Update the data cache
-                                    const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                                    tableBody.innerHTML = ''; // Clear existing table rows
-                                    for (let key in data) {
-                                        let row = tableBody.insertRow();
-                                        row.addEventListener('click', function () {
-                                            // Hide all rows
-                                            const allRows = tableBody.getElementsByTagName('tr');
-                                            for (let i = 0; i < allRows.length; i++) {
-                                                allRows[i].classList.add('hidden-row');
+                        <br>
+                        <!-- Add a Clear Selection button with a CSS class -->
+                        <button id="clear-selection-button" class="center-button" style="display: none;">Clear Filter</button>
+                        
+                        <br>
+                        <div id="selected-data"></div>
+                        <br>
+                        <script>
+                            let selectedDeviceName = null; // Global variable to store the selected device name
+                            let dataCache = {}; // Cache for storing fetched data
+                        
+                            function updateTableData() {
+                                fetch('/get_table_data')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        dataCache = data; // Update the data cache
+                                        const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                                        tableBody.innerHTML = ''; // Clear existing table rows
+
+                                        let isRowSelected = selectedDeviceName !== null;
+
+                                        for (let key in data) {
+                                            let row = tableBody.insertRow();
+                                            row.addEventListener('click', function () {
+                                                // Reset all rows
+                                                const allRows = tableBody.getElementsByTagName('tr');
+                                                for (let i = 0; i < allRows.length; i++) {
+                                                    allRows[i].classList.remove('hidden-row', 'selected-row');
+                                                }
+
+                                                // Highlight and show the clicked row
+                                                row.classList.add('selected-row');
+
+                                                // Display the "Clear Filter" button
+                                                const clearButton = document.getElementById('clear-selection-button');
+                                                clearButton.style.display = 'block';
+
+                                                selectedDeviceName = key; // Update the global variable with the selected device name
+                                                updateSelectedDataDisplay(); // Update the selected data display
+                                            });
+
+                                            let cell1 = row.insertCell();
+                                            let cell2 = row.insertCell();
+                                            let cell3 = row.insertCell();
+                                            cell1.innerHTML = key;
+                                            cell2.innerHTML = data[key][0];
+                                            cell3.innerHTML = data[key][1];
+
+                                            // Apply hiding logic
+                                            if (isRowSelected) {
+                                                if (key !== selectedDeviceName) {
+                                                    row.classList.add('hidden-row');
+                                                } else {
+                                                    row.classList.add('selected-row');
+                                                }
                                             }
-                                            
-                                            // Show the clicked row
-                                            row.classList.remove('hidden-row');
-                                            row.classList.add('selected-row');
-                                            
-                                            // Display the "Clear Filter" button
-                                            const clearButton = document.getElementById('clear-selection-button');
-                                            clearButton.style.display = 'block';
-                                            
-                                            selectedDeviceName = key; // Update the global variable with the selected device name
-                                            updateSelectedDataDisplay(); // Update the selected data display
-                                        });
-                                        
-                                        if (Object.keys(data).indexOf(key) > 0) {
-                                            row.classList.add('hidden-row');
                                         }
-                    
-                                        let cell1 = row.insertCell();
-                                        let cell2 = row.insertCell();
-                                        let cell3 = row.insertCell();
-                                        cell1.innerHTML = key;
-                                        cell2.innerHTML = data[key][0];
-                                        cell3.innerHTML = data[key][1];
-                                    }
-                    
-                                    updateSelectedDataDisplay(); // Update the selected data display after refreshing the table
-                                })
-                                .catch(error => console.error('Error:', error));
-                        }
-                    
-                        function updateSelectedDataDisplay() {
-                            const selectedDataDiv = document.getElementById('selected-data');
-                            if (selectedDeviceName !== null && selectedDeviceName in dataCache) {
-                                const frequency = dataCache[selectedDeviceName][0];
-                                const signalStrength = dataCache[selectedDeviceName][1];
-                                selectedDataDiv.innerHTML = `
-                                    Device Name: ${selectedDeviceName}<br>
-                                    Frequency: ${frequency}<br>
-                                    Signal Strength: ${signalStrength}<br>
-                                `;
-                            } else {
-                                selectedDataDiv.innerHTML = '';
+
+                                        updateSelectedDataDisplay(); // Update the selected data display after refreshing the table
+                                    })
+                                    .catch(error => console.error('Error:', error));
                             }
-                        }
-                    
-                        const clearButton = document.getElementById('clear-selection-button');
-                        clearButton.addEventListener('click', function () {
-                            const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                            const selectedRow = tableBody.getElementsByClassName('selected-row')[0];
-                            if (selectedRow) {
-                                selectedRow.classList.remove('selected-row');
+
+
+                        
+                            function updateSelectedDataDisplay() {
+                                const selectedDataDiv = document.getElementById('selected-data');
+                                if (selectedDeviceName !== null && selectedDeviceName in dataCache) {
+                                    const frequency = dataCache[selectedDeviceName][0];
+                                    const signalStrength = dataCache[selectedDeviceName][1];
+                                    selectedDataDiv.innerHTML = `
+                                        Device Name: ${selectedDeviceName}<br>
+                                        Frequency: ${frequency}<br>
+                                        Signal Strength: ${signalStrength}<br>
+                                    `;
+                                } else {
+                                    selectedDataDiv.innerHTML = '';
+                                }
                             }
-                            
-                            // Show all rows
-                            const allRows = tableBody.getElementsByTagName('tr');
-                            for (let i = 0; i < allRows.length; i++) {
-                                allRows[i].classList.remove('hidden-row');
-                            }
-                            
-                            // Hide the "Clear Filter" button
-                            clearButton.style.display = 'none';
-                            
-                            selectedDeviceName = null; // Reset the global variable when selection is cleared
-                            updateSelectedDataDisplay(); // Clear the selected data display
-                        });
-                    
-                        // Initial update of the table
-                        updateTableData();
-                    
-                        // Periodically update the table every second
-                        setInterval(updateTableData, 1000);
-                    </script>
-                    
-                    
-                    <!-- Add a section to display selected data -->
-                    <div id="selected-data"></div>
-                    
-            </section>
-            <hr class="m-0" />
+                        
+                            const clearButton = document.getElementById('clear-selection-button');
+                            clearButton.addEventListener('click', function () {
+                                const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                                const selectedRow = tableBody.getElementsByClassName('selected-row')[0];
+                                if (selectedRow) {
+                                    selectedRow.classList.remove('selected-row');
+                                }
+                                
+                                // Show all rows
+                                const allRows = tableBody.getElementsByTagName('tr');
+                                for (let i = 0; i < allRows.length; i++) {
+                                    allRows[i].classList.remove('hidden-row');
+                                }
+                                
+                                // Hide the "Clear Filter" button
+                                clearButton.style.display = 'none';
+                                
+                                selectedDeviceName = null; // Reset the global variable when selection is cleared
+                                updateSelectedDataDisplay(); // Clear the selected data display
+                            });
+                        
+                            // Initial update of the table
+                            updateTableData();
+                        
+                            // Periodically update the table every second
+                            setInterval(updateTableData, 1000);
+                        </script>
+
             
+                </div>
+
+                <!-- 433 -->
+                <div class="resume-section-content">
+                    <!-- Collapsible content -->
+                    <div class="collapse" id="collapse433">
+                    <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">433 MHz LoRa Transceiver</h3><br>
+                            <div class="serial-data" id="serial-data-port1">
+                            </div>
+                            
+                            <div style="text-align:center;">
+                                <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
+                                <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
+                                <button class="transmit-button" onclick="transmit433()">Start Beacon</button>
+                                <button class="disconnect-button" onclick="confirmStopTransmission433()">Stop Beacon</button><br>
+                                <p id="status-label433" style="text-align: center">Status: Checking...</p>
+                                <div class="indicator-container">
+                                    <div id="indicator433" class="indicator"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- JavaScript for updating the indicator -->
+                            <script>
+                                function updateIndicator433() {
+                                    // Fetch the status from the Flask route
+                                    $.ajax({
+                                        url: '/checkSer',
+                                        type: 'GET',
+                                        data: {
+                                            port: 'port1',
+                                            
+                                        },
+                                        success: function(response) {
+                                            
+                                            if (response['result'] === 'True') {
+                                                $('#indicator433').removeClass('red').addClass('green');
+                                                $('#status-label433').text('Status: Connected');
+                                            } else {
+                                                $('#indicator433').removeClass('green').addClass('red');
+                                                $('#status-label433').text('Serial Port Status: Disconnected');
+                                            }
+                                        },
+                                        error: function() {
+                                            $('#indicator433').removeClass('green').addClass('red');
+                                            $('#status-label433').text('Serial Port Status: Disconnected');
+                                        }
+                                    });
+                                }
+
+                                // Initial update of the indicator
+                                updateIndicator433();
+
+                                // Periodically check and update the indicator (e.g., every 5 seconds)
+                                setInterval(updateIndicator433, 5000);
+                            </script>
+                            <script type="text/javascript">
+                                var socket = io.connect('http://' + document.domain + ':' + location.port);
+                            
+                                // For port1
+                                socket.on('initial_serial_data_port1', function(data) {
+                                    var serialDataDiv = document.getElementById('serial-data-port1');
+                                    data.data.forEach(function(line) {
+                                        serialDataDiv.innerHTML += line + '<br>';
+                                    });
+                                    // Scroll to the bottom for new data
+                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                });
+                            
+                                socket.on('serial_data_port1', function(data) {
+                                    var serialDataDiv = document.getElementById('serial-data-port1');
+                                    serialDataDiv.innerHTML += data.data + '<br>';
+                                    // Scroll to the bottom for new data
+                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                });
+                                </script>
+
+                                <script>
+                                    function promptUser433() {
+                                        Swal.fire({
+                                            title: 'Serial Port:',
+                                            input: 'text',
+                                            inputAttributes: {
+                                                autocapitalize: 'off'
+                                            },
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Submit',
+                                            cancelButtonText: 'Cancel',
+                                            showLoaderOnConfirm: true,
+                                            preConfirm: (value) => {
+                                                // Make an AJAX request to Flask
+                                                fetch(`/attach_serial_433?user_input=${encodeURIComponent(value)}`)
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        Swal.fire({
+                                                            title: 'Result',
+                                                            text: data.result,
+                                                            icon: 'info'
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                        Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                                    });
+                                            },
+                                            allowOutsideClick: () => !Swal.isLoading()
+                                        });
+                                    }
+                                </script>
+
+                                <script>
+                                    function deleteSerial433() {
+                                        Swal.fire({
+                                            title: 'Are you sure you want to disconnect the 433 MHz port?',
+                                            icon: 'question',
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Yes',
+                                            cancelButtonText: 'No',
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                // User clicked "Yes" - Send HTTP GET request to Flask
+                                                fetch('/delete_serial_433')
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        Swal.fire({
+                                                            title: 'Confirmation Result',
+                                                            text: data.result,
+                                                            icon: 'info'
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                        Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                                    });
+                                            }
+                                        });
+                                    }
+                                </script>
+                                <script>
+                                    var transmitIntervalId433 = null;
+
+                                    function transmit433() {
+                                        Swal.fire({
+                                            title: 'Enter data to transmit:',
+                                            input: 'text',
+                                            inputAttributes: {
+                                                autocapitalize: 'off'
+                                            },
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Submit',
+                                            cancelButtonText: 'Cancel',
+                                            showLoaderOnConfirm: true,
+                                            preConfirm: (value) => {
+                                                return startTransmission433(value); // Call the function to start transmission
+                                            },
+                                            allowOutsideClick: () => !Swal.isLoading()
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                Swal.fire({
+                                                    title: 'Transmission Started!',
+                                                    icon: 'success'
+                                                });
+                                            }
+                                        });
+                                    }
+
+
+                                    function startTransmission433(data) {
+                                        if (transmitIntervalId433) {
+                                            clearInterval(transmitIntervalId433); // Clear existing interval
+                                        }
+                                        transmitIntervalId433 = setInterval(() => {
+                                            sendTransmissionData433(data);
+                                        }, 10000); // Transmit data every 10 seconds
+
+                                        // Send the first transmission immediately
+                                        return sendTransmissionData433(data);
+                                    }
+
+
+                                    function sendTransmissionData433(data) {
+                                        return fetch('/transmit433', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify({ user_input: data })
+                                        })
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                throw new Error('Network response was not ok');
+                                            }
+                                            return response.json();
+                                        })
+                                        .catch(error => {
+                                            console.error('Error:', error);
+                                            Swal.fire('Error', 'Transmission failed: ' + error.message, 'error');
+                                            clearInterval(transmitIntervalId433); // Stop the interval on error
+                                        });
+                                    }
+
+
+                                    function stopTransmission433() {
+                                        if (transmitIntervalId433) {
+                                            clearInterval(transmitIntervalId433);
+                                            transmitIntervalId433 = null;
+                                            Swal.fire('Transmission Stopped', '', 'info');
+                                        }
+                                    }
+
+                                    function confirmStopTransmission433() {
+                                        Swal.fire({
+                                            title: 'Are you sure?',
+                                            text: "Do you want to stop the transmission?",
+                                            icon: 'warning',
+                                            showCancelButton: true,
+                                            confirmButtonColor: '#3085d6',
+                                            cancelButtonColor: '#d33',
+                                            confirmButtonText: 'Yes, stop it!'
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                stopTransmission433();
+                                            }
+                                        });
+                                    }
+                                </script>
+                        </div>
+                    </div>
+                </div>
+                <!-- Collapsible button -->
+                <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapse433" role="button" aria-expanded="false" aria-controls="collapse433">
+                    Toggle 433 MHz Beacon
+                </a>
+                </div>
+                <br><br>
+                <div class="resume-section-content">
+                    <div class="collapse" id="collapse868">
+                    <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">868 MHz LoRa Transceiver</h3><br>
+                            <div class="serial-data" id="serial-data-port2">
+                            </div>
+                            <div style="text-align:center;">
+                                <button class="styled-button" onclick="promptUser868()">Connect Serial Port</button>
+                                <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Serial Port</button>
+                                <button class="transmit-button" onclick="transmit868()">Start Beacon</button>
+                                <button class="disconnect-button" onclick="confirmStopTransmission868()">Stop Beacon</button><br>
+                                <p id="status-label868" style="text-align: center">Status: Checking...</p>
+                                <div class="indicator-container">
+                                    <div id="indicator868" class="indicator"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <script>
+                                function updateIndicator868() {
+                                    // Fetch the status from the Flask route
+                                    $.ajax({
+                                        url: '/checkSer',
+                                        type: 'GET',
+                                        data: {
+                                            port: 'port2',
+                                            
+                                        },
+                                        success: function(response) {
+                                            
+                                            if (response['result'] === 'True') {
+                                                $('#indicator868').removeClass('red').addClass('green');
+                                                $('#status-label868').text('Status: Connected');
+                                            } else {
+                                                $('#indicator868').removeClass('green').addClass('red');
+                                                $('#status-label868').text('Serial Port Status: Disconnected');
+                                            }
+                                        },
+                                        error: function() {
+                                            $('#indicator868').removeClass('green').addClass('red');
+                                            $('#status-label868a').text('Serial Port Status: Disconnected');
+                                        }
+                                    });
+                                }
+
+                                // Initial update of the indicator
+                                updateIndicator868();
+
+                                // Periodically check and update the indicator (e.g., every 5 seconds)
+                                setInterval(updateIndicator868, 5000);
+                            </script>
+                            <script type="text/javascript">
+                                var socket = io.connect('http://' + document.domain + ':' + location.port);
+                            
+                                socket.on('serial_data_port1', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port1');
+                                if (data.data instanceof Array) {
+                                    data.data.forEach(function(line) {
+                                        serialDataDiv.innerHTML += line + '<br>';
+                                    });
+                                } 
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+
+                                </script>
+
+                        <script>
+                            // For port2
+                            socket.on('initial_serial_data_port2', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port2');
+                                data.data.forEach(function(line) {
+                                    serialDataDiv.innerHTML += line + '<br>';
+                                });
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        
+                            socket.on('serial_data_port2', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port2');
+                                serialDataDiv.innerHTML += data.data + '<br>';
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        </script>
+
+                        <script>
+                            function promptUser868() {
+                                Swal.fire({
+                                    title: 'Serial Port:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        // Make an AJAX request to Flask
+                                        fetch(`/attach_serial_868?user_input=${encodeURIComponent(value)}`)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                });
+                            }
+                        </script>
+
+                        <script>
+                            function deleteSerial868() {
+                                Swal.fire({
+                                    title: 'Are you sure you want to disconnect the 868 MHz port?',
+                                    icon: 'question',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Yes',
+                                    cancelButtonText: 'No',
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        // User clicked "Yes" - Send HTTP GET request to Flask
+                                        fetch('/delete_serial_868')
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Confirmation Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    }
+                                });
+                            }
+                        </script>
+
+                        <script>
+                            var transmitIntervalId868 = null;
+
+                            function transmit868() {
+                                Swal.fire({
+                                    title: 'Enter data to transmit:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        return startTransmission868(value); // Call the function to start transmission
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        Swal.fire({
+                                            title: 'Transmission Started!',
+                                            icon: 'success'
+                                        });
+                                    }
+                                });
+                            }
+
+
+                            function startTransmission868(data) {
+                                if (transmitIntervalId868) {
+                                    clearInterval(transmitIntervalId868); // Clear existing interval
+                                }
+                                transmitIntervalId868 = setInterval(() => {
+                                    sendTransmissionData868(data);
+                                }, 10000); // Transmit data every 10 seconds
+
+                                // Send the first transmission immediately
+                                return sendTransmissionData868(data);
+                            }
+
+
+                            function sendTransmissionData868(data) {
+                                return fetch('/transmit868', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ user_input: data })
+                                })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    Swal.fire('Error', 'Transmission failed: ' + error.message, 'error');
+                                    clearInterval(transmitIntervalId868); // Stop the interval on error
+                                });
+                            }
+
+
+                            function stopTransmission868() {
+                                if (transmitIntervalId868) {
+                                    clearInterval(transmitIntervalId868);
+                                    transmitIntervalId868 = null;
+                                    Swal.fire('Transmission Stopped', '', 'info');
+                                }
+                            }
+
+                            function confirmStopTransmission868() {
+                                Swal.fire({
+                                    title: 'Are you sure?',
+                                    text: "Do you want to stop the transmission?",
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#3085d6',
+                                    cancelButtonColor: '#d33',
+                                    confirmButtonText: 'Yes, stop it!'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        stopTransmission868();
+                                    }
+                                });
+                            }
+                        </script>
+                        </div>
+                    </div>
+                    <!-- Collapsible button -->
+                    <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapse868" role="button" aria-expanded="false" aria-controls="collapse868">
+                        Toggle 868 MHz Beacon
+                    </a>
+                </div>
+                <br><br>
+
+                <div class="resume-section-content">
+                    <div class="collapse" id="collapse915">
+                    <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
+                        <div class="flex-grow-1">
+                            <h3 class="mb-0">915 MHZ LoRa Transceiver</h3><br>
+                            <div class="serial-data" id="serial-data-port3">
+                            </div>
+                            <div style="text-align:center;">
+                                <button class="styled-button" onclick="promptUser915()">Connect Serial Port</button>
+                                <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Serial Port</button>
+                                <button class="transmit-button" onclick="transmit915()">Start Beacon</button>
+                                <button class="disconnect-button" onclick="confirmStopTransmission915()">Stop Beacon</button><br>
+                                <p id="status-label915" style="text-align: center">Status: Checking...</p>
+                                <div class="indicator-container">
+                                    <div id="indicator915" class="indicator"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <script>
+                            function updateIndicator915() {
+                                // Fetch the status from the Flask route
+                                $.ajax({
+                                    url: '/checkSer',
+                                    type: 'GET',
+                                    data: {
+                                        port: 'port3',
+                                        
+                                    },
+                                    success: function(response) {
+                                        
+                                        if (response['result'] === 'True') {
+                                            $('#indicator915').removeClass('red').addClass('green');
+                                            $('#status-label915').text('Status: Connected');
+                                        } else {
+                                            $('#indicator915').removeClass('green').addClass('red');
+                                            $('#status-label915').text('Serial Port Status: Disconnected');
+                                        }
+                                    },
+                                    error: function() {
+                                        $('#indicator915').removeClass('green').addClass('red');
+                                        $('#status-label915').text('Serial Port Status: Disconnected');
+                                    }
+                                });
+                            }
+
+                            // Initial update of the indicator
+                            updateIndicator915();
+
+                            // Periodically check and update the indicator (e.g., every 5 seconds)
+                            setInterval(updateIndicator915, 5000);
+                        </script>
+                        <script>
+                            // For port3
+                            socket.on('initial_serial_data_port3', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port3');
+                                data.data.forEach(function(line) {
+                                    serialDataDiv.innerHTML += line + '<br>';
+                                });
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        
+                            socket.on('serial_data_port3', function(data) {
+                                var serialDataDiv = document.getElementById('serial-data-port3');
+                                serialDataDiv.innerHTML += data.data + '<br>';
+                                // Scroll to the bottom for new data
+                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                            });
+                        </script>
+
+                        <script>
+                            function promptUser915() {
+                                Swal.fire({
+                                    title: 'Serial Port:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        // Make an AJAX request to Flask
+                                        fetch(`/attach_serial_915?user_input=${encodeURIComponent(value)}`)
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                });
+                            }
+                        </script>
+
+                        <script>
+                            function deleteSerial915() {
+                                Swal.fire({
+                                    title: 'Are you sure you want to disconnect the 915 MHz port?',
+                                    icon: 'question',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Yes',
+                                    cancelButtonText: 'No',
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        // User clicked "Yes" - Send HTTP GET request to Flask
+                                        fetch('/delete_serial_915')
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                Swal.fire({
+                                                    title: 'Confirmation Result',
+                                                    text: data.result,
+                                                    icon: 'info'
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error:', error);
+                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                            });
+                                    }
+                                });
+                            }
+                        </script>
+                        <script>
+                            var transmitIntervalId915 = null;
+                        
+                            function transmit915() {
+                                Swal.fire({
+                                    title: 'Enter data to transmit:',
+                                    input: 'text',
+                                    inputAttributes: {
+                                        autocapitalize: 'off'
+                                    },
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Submit',
+                                    cancelButtonText: 'Cancel',
+                                    showLoaderOnConfirm: true,
+                                    preConfirm: (value) => {
+                                        return startTransmission915(value); // Call the function to start transmission
+                                    },
+                                    allowOutsideClick: () => !Swal.isLoading()
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        Swal.fire({
+                                            title: 'Transmission Started!',
+                                            icon: 'success'
+                                        });
+                                    }
+                                });
+                            }
+                        
+                        
+                            function startTransmission915(data) {
+                                if (transmitIntervalId915) {
+                                    clearInterval(transmitIntervalId915); // Clear existing interval
+                                }
+                                transmitIntervalId915 = setInterval(() => {
+                                    sendTransmissionData915(data);
+                                }, 10000); // Transmit data every 10 seconds
+                        
+                                // Send the first transmission immediately
+                                return sendTransmissionData915(data);
+                            }
+                        
+                        
+                            function sendTransmissionData915(data) {
+                                return fetch('/transmit915', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({ user_input: data })
+                                })
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    Swal.fire('Error', 'Transmission failed: ' + error.message, 'error');
+                                    clearInterval(transmitIntervalId915); // Stop the interval on error
+                                });
+                            }
+                        
+                        
+                            function stopTransmission915() {
+                                if (transmitIntervalId915) {
+                                    clearInterval(transmitIntervalId915);
+                                    transmitIntervalId915 = null;
+                                    Swal.fire('Transmission Stopped', '', 'info');
+                                }
+                            }
+                        
+                            function confirmStopTransmission915() {
+                                Swal.fire({
+                                    title: 'Are you sure?',
+                                    text: "Do you want to stop the transmission?",
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#3085d6',
+                                    cancelButtonColor: '#d33',
+                                    confirmButtonText: 'Yes, stop it!'
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        stopTransmission915();
+                                    }
+                                });
+                            }
+                        </script>
+                        </div>
+                    </div>
+                    <!-- Collapsible button -->
+                    <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapse915" role="button" aria-expanded="false" aria-controls="collapse915">
+                        Toggle 915 MHz Beacon
+                    </a>
+                    </div>
+            </section>
+
+        
+        </div>
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- Core theme JS-->
+        <script src="static/js/scripts.js"></script>
     </body>
 </html>
