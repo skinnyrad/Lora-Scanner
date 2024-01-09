@@ -23,50 +23,58 @@ frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, Non
 surveydata = {}
 
 
+import re
+import time
+
+import re
+import time
+
 def read_serial_data(port, ser, buffer):
     global surveydata
     rssi_pattern = r"RSSI: (-?\d+)"
-    rssi = ''
-
+    decoded_value_pattern = r"Decoded Value: (.+)"
+    rssi = None
+    decoded_value = None
+    
     while True:
         try:
             if ser.in_waiting > 0:
                 data = ser.readline().decode('utf-8').strip()
-                match = re.search(rssi_pattern, data)
 
-                # Check if a RSSI was found
-                if match:
-                    if port =='port1':
-                        rssi = int(match.group(1))
-                        surveydata['Raw LoRa Device 443 MHz'] = [433,rssi,'']
-                    elif port =='port2':
-                        rssi = int(match.group(1))
-                        surveydata['Raw LoRa Device 868 MHz'] = [868,rssi,'']
-                    elif port =='port3':
-                        rssi = int(match.group(1))
-                        surveydata['Raw LoRa Device 915 MHz'] = [915,rssi,'']
+                # Match RSSI
+                rssi_match = re.search(rssi_pattern, data)
+                if rssi_match:
+                    rssi = int(rssi_match.group(1))
+
+                # Match Decoded Value
+                decoded_match = re.search(decoded_value_pattern, data)
+                if decoded_match:
+                    decoded_value = decoded_match.group(1)
+
+                # Update dictionary only if both RSSI and Decoded Value are found
+                if rssi is not None and decoded_value is not None:
+                    key = f'Raw LoRa Device {frequency(port)} MHz'
+                    surveydata[key] = [frequency(port), rssi, decoded_value]
+                    # Reset rssi and decoded_value for next packet
+                    rssi = None
+                    decoded_value = None
 
                 buffer.append(data)
-                socketio.emit(f'serial_data_{port}', {'data': data})  
-                if frequency(port) == 433 and surveydata.get('Raw LoRa Device 443 MHz') is None:
-                    surveydata['Raw LoRa Device 443 MHz'] = [433,0,rssi]
+                socketio.emit(f'serial_data_{port}', {'data': data})
 
-                elif frequency(port) == 868 and surveydata.get('Raw LoRa Device 868 MHz') is None:
-                    surveydata['Raw LoRa Device 868 MHz'] = [868,0,rssi]
-
-                elif frequency(port) == 915 and surveydata.get('Raw LoRa Device 915 MHz') is None:
-                    surveydata['Raw LoRa Device 915 MHz'] = [915,0,rssi]
-
-
-            if (port == 'port1' and port1_status == False):
+            # Check port status
+            if (port == 'port1' and not port1_status) or \
+               (port == 'port2' and not port2_status) or \
+               (port == 'port3' and not port3_status):
                 return
-            if (port == 'port2' and port2_status == False):
-                return
-            if (port == 'port3' and port3_status == False):
-                return
+
             time.sleep(0.1)
-        except:
+
+        except Exception as e:
+            print(f"Error: {e}")
             pass
+
+
 
 
 def connect_serial(port,frequency):
