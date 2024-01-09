@@ -66,25 +66,34 @@
                     </div>
                 
                     <script>
-                        // Fetch data from Flask route
-                        fetch('/get_table_data')
-                            .then(response => response.json())
-                            .then(data => {
-                                const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                                for (let key in data) {
-                                    let row = tableBody.insertRow();
-                                    let cell1 = row.insertCell();
-                                    let cell2 = row.insertCell();
-                                    let cell3 = row.insertCell();
-                                    let cell4 = row.insertCell();
-                                    cell1.innerHTML = key;
-                                    cell2.innerHTML = data[key][0];
-                                    cell3.innerHTML = data[key][1];
-                                    cell4.innerHTML = data[key][2];
-                                }
-                            })
-                            .catch(error => console.error('Error:', error));
+                        function updateTableData() {
+                            fetch('/get_table_data')
+                                .then(response => response.json())
+                                .then(data => {
+                                    const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                                    tableBody.innerHTML = ''; // Clear existing table rows
+                                    for (let key in data) {
+                                        let row = tableBody.insertRow();
+                                        let cell1 = row.insertCell();
+                                        let cell2 = row.insertCell();
+                                        let cell3 = row.insertCell();
+                                        let cell4 = row.insertCell();
+                                        cell1.innerHTML = key;
+                                        cell2.innerHTML = data[key][0];
+                                        cell3.innerHTML = data[key][1];
+                                        cell4.innerHTML = data[key][2];
+                                    }
+                                })
+                                .catch(error => console.error('Error:', error));
+                        }
+                    
+                        // Initial update of the table
+                        updateTableData();
+                    
+                        // Periodically update the table every 30 seconds (30000 milliseconds)
+                        setInterval(updateTableData, 30000);
                     </script>
+                    
             </section>
             <hr class="m-0" />
             
