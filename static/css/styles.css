@@ -11082,3 +11082,18 @@ th, td {
 th {
   background-color: #f2f2f2;
 }
+
+.selected-row {
+  background-color: #FFFF99; /* Highlight color */
+  font-weight: bold; /* Enlarge the font */
+}
+
+.hidden-row {
+  display: none; /* Hide the non-selected rows */
+}
+
+.center-button {
+  display: block;
+  margin: 0 auto;
+  text-align: center;
+}

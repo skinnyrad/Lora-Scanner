@@ -20,7 +20,7 @@ global ser2
 global ser3
 global_dataframe = pd.DataFrame(columns=['Device Name', 'Frequency', 'Signal Strength', 'Plaintext'])
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
-surveydata = {'Test Device': [915, -20, 'Some Plaintext information'],}
+surveydata = {}
 
 
 def read_serial_data(port, ser, buffer):
