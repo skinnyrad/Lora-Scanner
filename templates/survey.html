@@ -56,16 +56,17 @@
                                     <th>Device Name</th>
                                     <th>Frequency</th>
                                     <th>Signal Strength</th>
-                                    <th>Recovered Plaintext</th>
+                                    <th>Decoded Values</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <!-- Rows will be inserted here -->
                             </tbody>
-                        </table>
+                        </table>                                              
                     </div>
                 
                     <script>
+                        let expandedRows = {};
                         function updateTableData() {
                             fetch('/get_table_data')
                                 .then(response => response.json())
@@ -73,25 +74,65 @@
                                     const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
                                     tableBody.innerHTML = ''; // Clear existing table rows
                                     for (let key in data) {
-                                        let row = tableBody.insertRow();
-                                        let cell1 = row.insertCell();
-                                        let cell2 = row.insertCell();
-                                        let cell3 = row.insertCell();
-                                        let cell4 = row.insertCell();
+                                        let mainRow = tableBody.insertRow();
+                                        let cell1 = mainRow.insertCell();
+                                        let cell2 = mainRow.insertCell();
+                                        let cell3 = mainRow.insertCell();
+                                        let cell4 = mainRow.insertCell();
                                         cell1.innerHTML = key;
-                                        cell2.innerHTML = data[key][0];
-                                        cell3.innerHTML = data[key][1];
-                                        cell4.innerHTML = data[key][2];
+                                        cell2.innerHTML = data[key][0][0]; // Frequency (from the first entry)
+                                        cell3.innerHTML = data[key][0][1]; // Signal Strength (from the first entry)
+
+                                        // Create a Bootstrap styled button
+                                        let expandBtn = document.createElement('button');
+                                        expandBtn.classList.add('btn', 'btn-secondary', 'btn-sm'); // Bootstrap button classes
+                                        expandBtn.innerHTML = 'Show Values';
+                                        expandBtn.onclick = function() {
+                                            let deviceKey = key; // Capture the current device key
+                                            let isExpanded = !expandedRows[deviceKey]; // Toggle the expanded state
+
+                                            // Show or hide the expandable rows
+                                            let nextRow = mainRow.nextSibling;
+                                            while (nextRow && nextRow.classList.contains('expandable-row')) {
+                                                nextRow.style.display = isExpanded ? 'table-row' : 'none';
+                                                nextRow = nextRow.nextSibling;
+                                            }
+
+                                            // Update the button text and expandedRows object
+                                            expandBtn.innerHTML = isExpanded ? 'Hide Values' : 'Show Values';
+                                            expandedRows[deviceKey] = isExpanded;
+                                        };
+                                        cell4.appendChild(expandBtn);
+                                        cell4.style.textAlign = 'center'; // Center align the button
+
+                                        // Add expandable rows for each decoded value
+                                        data[key].forEach(entry => {
+                                            let expandableRow = tableBody.insertRow();
+                                            expandableRow.classList.add('expandable-row');
+                                            expandableRow.style.display = 'none'; // Initially hidden
+                                            let cell = expandableRow.insertCell();
+                                            cell.colSpan = "4";
+                                            cell.innerHTML = `Decoded Value: ${entry[2]}`;
+                                        });
+
+                                        if (expandedRows[key]) {
+                                            let nextRow = mainRow.nextSibling;
+                                            while (nextRow && nextRow.classList.contains('expandable-row')) {
+                                                nextRow.style.display = 'table-row';
+                                                nextRow = nextRow.nextSibling;
+                                            }
+                                        }
                                     }
                                 })
                                 .catch(error => console.error('Error:', error));
                         }
-                    
-                        // Initial update of the table
-                        updateTableData();
-                    
-                        // Periodically update the table every 30 seconds (30000 milliseconds)
-                        setInterval(updateTableData, 30000);
+
+                            // Initial update of the table
+                            updateTableData();
+
+                            // Periodically update the table every 30 seconds (30000 milliseconds)
+                            setInterval(updateTableData, 30000);
+
                     </script>
                     
             </section>

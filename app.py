@@ -22,13 +22,6 @@ global_dataframe = pd.DataFrame(columns=['Device Name', 'Frequency', 'Signal Str
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
 
-
-import re
-import time
-
-import re
-import time
-
 def read_serial_data(port, ser, buffer):
     global surveydata
     rssi_pattern = r"RSSI: (-?\d+)"
@@ -53,8 +46,16 @@ def read_serial_data(port, ser, buffer):
 
                 # Update dictionary only if both RSSI and Decoded Value are found
                 if rssi is not None and decoded_value is not None:
-                    key = f'Raw LoRa Device {frequency(port)} MHz'
-                    surveydata[key] = [frequency(port), rssi, decoded_value]
+                    freq = frequency(port)
+                    key = f'Raw LoRa Device {freq} MHz'
+                    
+                    # Initialize the list for the frequency if not already done
+                    if key not in surveydata:
+                        surveydata[key] = []
+
+                    # Append the new values to the list for this frequency
+                    surveydata[key].append([freq, rssi, decoded_value])
+
                     # Reset rssi and decoded_value for next packet
                     rssi = None
                     decoded_value = None
@@ -73,6 +74,7 @@ def read_serial_data(port, ser, buffer):
         except Exception as e:
             print(f"Error: {e}")
             pass
+
 
 
 

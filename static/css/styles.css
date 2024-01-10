@@ -11066,10 +11066,25 @@ section.resume-section .resume-section-content {
 
 /* Styling for the table */
 .scrollable-table {
-  max-height: 300px;
-  overflow-y: auto;
-  display: block;
+  width: 100%;
+  overflow-y: auto; /* Enable vertical scrolling */
+  max-height: 500px; /* Adjust the height as needed */
 }
+#data-table {
+  width: 100%;
+  font-size: 1.1em;
+  border-collapse: collapse; /* Optional: for border styling */
+}
+#data-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #fff; /* Or any other background color */
+}
+#data-table th, #data-table td {
+  padding: 10px;
+  border: 1px solid #ddd; /* Optional: for border styling */
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

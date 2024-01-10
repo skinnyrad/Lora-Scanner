@@ -71,9 +71,7 @@
                         <br>
                         <!-- Add a Clear Selection button with a CSS class -->
                         <button id="clear-selection-button" class="center-button" style="display: none;">Clear Filter</button>
-                        
-                        <br>
-                        <div id="selected-data"></div>
+
                         <br>
                         <script>
                             let selectedDeviceName = null; // Global variable to store the selected device name
@@ -83,7 +81,6 @@
                                 fetch('/get_table_data')
                                     .then(response => response.json())
                                     .then(data => {
-                                        dataCache = data; // Update the data cache
                                         const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
                                         tableBody.innerHTML = ''; // Clear existing table rows
 
@@ -91,32 +88,22 @@
 
                                         for (let key in data) {
                                             let row = tableBody.insertRow();
-                                            row.addEventListener('click', function () {
-                                                // Reset all rows
-                                                const allRows = tableBody.getElementsByTagName('tr');
-                                                for (let i = 0; i < allRows.length; i++) {
-                                                    allRows[i].classList.remove('hidden-row', 'selected-row');
-                                                }
-
-                                                // Highlight and show the clicked row
-                                                row.classList.add('selected-row');
-
-                                                // Display the "Clear Filter" button
-                                                const clearButton = document.getElementById('clear-selection-button');
-                                                clearButton.style.display = 'block';
-
-                                                selectedDeviceName = key; // Update the global variable with the selected device name
-                                                updateSelectedDataDisplay(); // Update the selected data display
+                                            row.addEventListener('click', function() {
+                                                // Handle row click event for selection
+                                                handleRowSelection(row, key);
                                             });
 
                                             let cell1 = row.insertCell();
                                             let cell2 = row.insertCell();
                                             let cell3 = row.insertCell();
-                                            cell1.innerHTML = key;
-                                            cell2.innerHTML = data[key][0];
-                                            cell3.innerHTML = data[key][1];
+                                            cell1.innerHTML = key; // Device Name
+                                            
+                                            // Assuming that the latest data is the most relevant
+                                            let latestData = data[key][data[key].length - 1];
+                                            cell2.innerHTML = latestData[0]; // Frequency
+                                            cell3.innerHTML = latestData[1]; // Signal Strength
 
-                                            // Apply hiding logic
+                                            // Apply hiding logic based on selection
                                             if (isRowSelected) {
                                                 if (key !== selectedDeviceName) {
                                                     row.classList.add('hidden-row');
@@ -131,22 +118,36 @@
                                     .catch(error => console.error('Error:', error));
                             }
 
-
-                        
-                            function updateSelectedDataDisplay() {
-                                const selectedDataDiv = document.getElementById('selected-data');
-                                if (selectedDeviceName !== null && selectedDeviceName in dataCache) {
-                                    const frequency = dataCache[selectedDeviceName][0];
-                                    const signalStrength = dataCache[selectedDeviceName][1];
-                                    selectedDataDiv.innerHTML = `
-                                        Device Name: ${selectedDeviceName}<br>
-                                        Frequency: ${frequency}<br>
-                                        Signal Strength: ${signalStrength}<br>
-                                    `;
-                                } else {
-                                    selectedDataDiv.innerHTML = '';
+                            function handleRowSelection(row, key) {
+                                // Reset all rows
+                                const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                                const allRows = tableBody.getElementsByTagName('tr');
+                                for (let i = 0; i < allRows.length; i++) {
+                                    allRows[i].classList.remove('hidden-row', 'selected-row');
                                 }
+
+                                // Highlight and show the clicked row
+                                row.classList.add('selected-row');
+
+                                // Display the "Clear Filter" button
+                                const clearButton = document.getElementById('clear-selection-button');
+                                clearButton.style.display = 'block';
+
+                                selectedDeviceName = key; // Update the global variable with the selected device name
+                                updateSelectedDataDisplay(); // Update the selected data display
                             }
+
+                            // ... rest of your existing code for updateSelectedDataDisplay, clearButton event listener, etc.
+
+                            // Initial update of the table
+                            updateTableData();
+
+                            // Periodically update the table every second
+                            setInterval(updateTableData, 1000);
+
+
+
+
                         
                             const clearButton = document.getElementById('clear-selection-button');
                             clearButton.addEventListener('click', function () {
@@ -169,11 +170,7 @@
                                 updateSelectedDataDisplay(); // Clear the selected data display
                             });
                         
-                            // Initial update of the table
-                            updateTableData();
-                        
-                            // Periodically update the table every second
-                            setInterval(updateTableData, 1000);
+
                         </script>
 
             
