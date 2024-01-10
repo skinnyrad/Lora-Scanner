@@ -1,7 +1,3 @@
-Certainly! Below is a template for a README file for your application. This README assumes your application is a Flask-based web application with SocketIO integration, focusing on managing and processing serial data from various frequencies (433 MHz, 868 MHz, and 915 MHz). Feel free to customize it further to match your specific requirements and features:
-
----
-
 # Lora Scanner Application
 
 ## Introduction
