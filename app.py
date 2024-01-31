@@ -22,6 +22,7 @@ global ser2
 global ser3
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
+parsed_entries = set()
 
 def read_serial_data(port, ser, buffer):
     global surveydata
@@ -55,7 +56,8 @@ def read_serial_data(port, ser, buffer):
                         surveydata[key] = []
 
                     # Append the new values to the list for this frequency
-                    surveydata[key].append([freq, rssi, decoded_value])
+                    current_timestamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+                    surveydata[key].append([freq, rssi, f"{decoded_value} -- Timestamp:{current_timestamp}"])
 
                     # Reset rssi and decoded_value for next packet
                     rssi = None
@@ -76,6 +78,7 @@ def read_serial_data(port, ser, buffer):
             #print("Could not access Serial Port")
             #print(f"Error: {e}")
             pass
+
 
 def parse_and_store_data():
     global surveydata
@@ -107,22 +110,27 @@ def parse_and_store_data():
             cell_data = [cell.text.strip() for cell in cells[1:] if cells.index(cell) < len(headers) + 1]
             formatted_row = ' | '.join(cell_data)
 
-            # Extract DevEui or DevAddr from the response
-            dev_id = extract_dev_id(formatted_row)  # Implement this function based on your data format
-            freq = extract_freq(formatted_row)  # Implement this function based on your data format
+            dev_id = extract_dev_id(formatted_row)  # Your existing function to extract DevEui or DevAddr
+            freq = extract_freq(formatted_row)  # Your existing function to extract frequency
 
-            # Initialize dictionary for dev_id if not present
-            if dev_id not in surveydata:
-                surveydata[dev_id] = []
+            if dev_id and freq:
+                entry_identifier = f"{dev_id}_{formatted_row}"  # Create a unique identifier for the entry
+                
+                # Only process the entry if we haven't seen this identifier before
+                if entry_identifier not in parsed_entries:
+                    parsed_entries.add(entry_identifier)  # Add the identifier to the set
 
-            # Append new data to the list associated with the DevEui or DevAddr
-            surveydata[dev_id].append([freq, 0, formatted_row])
-            #surveydata[dev_id]['decoded_values'].append(formatted_row)
+                    # Initialize dictionary for dev_id if not present
+                    if dev_id not in surveydata:
+                        surveydata[dev_id] = []
+
+                    # Append new data to the list associated with the DevEui or DevAddr
+                    surveydata[dev_id].append([freq, 0, formatted_row])
 
         print("Data parsed and stored.")
-
     else:
         print(f"Request failed with status code: {response.status_code}")
+
 
     # Schedule the next call to this function
     Timer(60, parse_and_store_data).start()  # Call this function every 60 seconds
