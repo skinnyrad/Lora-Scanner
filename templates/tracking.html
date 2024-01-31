@@ -347,23 +347,32 @@
 
                                     function transmit433() {
                                         Swal.fire({
-                                            title: 'Enter data to transmit:',
-                                            input: 'text',
-                                            inputAttributes: {
-                                                autocapitalize: 'off'
-                                            },
+                                            title: 'Enter data to transmit and set interval:',
+                                            html:
+                                                '<input id="swal-input1" class="swal2-input" placeholder="Enter data">' +
+                                                '<input id="swal-input2" class="swal2-input" placeholder="Interval in milliseconds">',
+                                            focusConfirm: false,
                                             showCancelButton: true,
                                             confirmButtonText: 'Submit',
                                             cancelButtonText: 'Cancel',
-                                            showLoaderOnConfirm: true,
-                                            preConfirm: (value) => {
-                                                return startTransmission433(value); // Call the function to start transmission
-                                            },
-                                            allowOutsideClick: () => !Swal.isLoading()
+                                            preConfirm: () => {
+                                                const data = document.getElementById('swal-input1').value;
+                                                const interval = document.getElementById('swal-input2').value;
+
+                                                if (!data || !interval) {
+                                                    Swal.showValidationMessage('Please enter both data and interval');
+                                                } else if (isNaN(interval) || interval < 1000) { // Ensuring the interval is a number and at least 1 second (1000 milliseconds)
+                                                    Swal.showValidationMessage('Please enter a valid interval (number >= 1000)');
+                                                } else {
+                                                    return { data: data, interval: interval };
+                                                }
+                                            }
                                         }).then((result) => {
-                                            if (result.isConfirmed) {
+                                            if (result.isConfirmed && result.value) {
+                                                startTransmission433(result.value.data, result.value.interval);
                                                 Swal.fire({
                                                     title: 'Transmission Started!',
+                                                    html: `Data: ${result.value.data}<br>Interval: ${result.value.interval} milliseconds`,
                                                     icon: 'success'
                                                 });
                                             }
@@ -371,17 +380,19 @@
                                     }
 
 
-                                    function startTransmission433(data) {
+
+                                    function startTransmission433(data, interval) {
                                         if (transmitIntervalId433) {
                                             clearInterval(transmitIntervalId433); // Clear existing interval
                                         }
                                         transmitIntervalId433 = setInterval(() => {
                                             sendTransmissionData433(data);
-                                        }, 10000); // Transmit data every 10 seconds
+                                        }, parseInt(interval)); // Use the user-provided interval, ensuring it's an integer
 
                                         // Send the first transmission immediately
-                                        return sendTransmissionData433(data);
+                                        sendTransmissionData433(data);
                                     }
+
 
 
                                     function sendTransmissionData433(data) {
@@ -582,23 +593,32 @@
 
                             function transmit868() {
                                 Swal.fire({
-                                    title: 'Enter data to transmit:',
-                                    input: 'text',
-                                    inputAttributes: {
-                                        autocapitalize: 'off'
-                                    },
+                                    title: 'Enter data to transmit and set interval:',
+                                    html:
+                                        '<input id="swal-input1-868" class="swal2-input" placeholder="Enter data">' +
+                                        '<input id="swal-input2-868" class="swal2-input" placeholder="Interval in milliseconds">',
+                                    focusConfirm: false,
                                     showCancelButton: true,
                                     confirmButtonText: 'Submit',
                                     cancelButtonText: 'Cancel',
-                                    showLoaderOnConfirm: true,
-                                    preConfirm: (value) => {
-                                        return startTransmission868(value); // Call the function to start transmission
-                                    },
-                                    allowOutsideClick: () => !Swal.isLoading()
+                                    preConfirm: () => {
+                                        const data = document.getElementById('swal-input1-868').value;
+                                        const interval = document.getElementById('swal-input2-868').value;
+
+                                        if (!data || !interval) {
+                                            Swal.showValidationMessage('Please enter both data and interval');
+                                        } else if (isNaN(interval) || interval < 1000) {
+                                            Swal.showValidationMessage('Please enter a valid interval (number >= 1000)');
+                                        } else {
+                                            return { data: data, interval: interval };
+                                        }
+                                    }
                                 }).then((result) => {
-                                    if (result.isConfirmed) {
+                                    if (result.isConfirmed && result.value) {
+                                        startTransmission868(result.value.data, result.value.interval);
                                         Swal.fire({
                                             title: 'Transmission Started!',
+                                            html: `Data: ${result.value.data}<br>Interval: ${result.value.interval} milliseconds`,
                                             icon: 'success'
                                         });
                                     }
@@ -606,17 +626,19 @@
                             }
 
 
-                            function startTransmission868(data) {
+
+                            function startTransmission868(data, interval) {
                                 if (transmitIntervalId868) {
                                     clearInterval(transmitIntervalId868); // Clear existing interval
                                 }
                                 transmitIntervalId868 = setInterval(() => {
                                     sendTransmissionData868(data);
-                                }, 10000); // Transmit data every 10 seconds
+                                }, parseInt(interval));
 
                                 // Send the first transmission immediately
-                                return sendTransmissionData868(data);
+                                sendTransmissionData868(data);
                             }
+
 
 
                             function sendTransmissionData868(data) {
@@ -818,41 +840,52 @@
                         
                             function transmit915() {
                                 Swal.fire({
-                                    title: 'Enter data to transmit:',
-                                    input: 'text',
-                                    inputAttributes: {
-                                        autocapitalize: 'off'
-                                    },
+                                    title: 'Enter data to transmit and set interval:',
+                                    html:
+                                        '<input id="swal-input1-915" class="swal2-input" placeholder="Enter data">' +
+                                        '<input id="swal-input2-915" class="swal2-input" placeholder="Interval in milliseconds">',
+                                    focusConfirm: false,
                                     showCancelButton: true,
                                     confirmButtonText: 'Submit',
                                     cancelButtonText: 'Cancel',
-                                    showLoaderOnConfirm: true,
-                                    preConfirm: (value) => {
-                                        return startTransmission915(value); // Call the function to start transmission
-                                    },
-                                    allowOutsideClick: () => !Swal.isLoading()
+                                    preConfirm: () => {
+                                        const data = document.getElementById('swal-input1-915').value;
+                                        const interval = document.getElementById('swal-input2-915').value;
+
+                                        if (!data || !interval) {
+                                            Swal.showValidationMessage('Please enter both data and interval');
+                                        } else if (isNaN(interval) || interval < 1000) {
+                                            Swal.showValidationMessage('Please enter a valid interval (number >= 1000)');
+                                        } else {
+                                            return { data: data, interval: interval };
+                                        }
+                                    }
                                 }).then((result) => {
-                                    if (result.isConfirmed) {
+                                    if (result.isConfirmed && result.value) {
+                                        startTransmission915(result.value.data, result.value.interval);
                                         Swal.fire({
                                             title: 'Transmission Started!',
+                                            html: `Data: ${result.value.data}<br>Interval: ${result.value.interval} milliseconds`,
                                             icon: 'success'
                                         });
                                     }
                                 });
                             }
+
                         
                         
-                            function startTransmission915(data) {
+                            function startTransmission915(data, interval) {
                                 if (transmitIntervalId915) {
                                     clearInterval(transmitIntervalId915); // Clear existing interval
                                 }
                                 transmitIntervalId915 = setInterval(() => {
                                     sendTransmissionData915(data);
-                                }, 10000); // Transmit data every 10 seconds
-                        
+                                }, parseInt(interval));
+
                                 // Send the first transmission immediately
-                                return sendTransmissionData915(data);
+                                sendTransmissionData915(data);
                             }
+
                         
                         
                             function sendTransmissionData915(data) {
