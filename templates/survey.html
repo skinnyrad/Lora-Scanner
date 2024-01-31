@@ -62,11 +62,26 @@
                             <tbody>
                                 <!-- Rows will be inserted here -->
                             </tbody>
-                        </table>                                              
+                        </table><br><br>
+                        <div style="text-align:center;">
+                            <button class="transmit-button" onclick="manualUpdateTable()">Refresh Table</button>  
+                        </div>
+                                                                    
                     </div>
-                
+                    
                     <script>
                         let expandedRows = {};
+
+                        function manualUpdateTable() {
+                            // Display a loading alert
+                            Swal.fire({
+                                title: 'Table Updated!',
+                                icon: 'success'
+                            });
+
+                            updateTableData();
+                        }
+
                         function updateTableData() {
                             fetch('/get_table_data')
                                 .then(response => response.json())
