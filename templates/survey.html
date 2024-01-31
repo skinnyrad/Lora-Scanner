@@ -80,11 +80,16 @@
                                         let cell3 = mainRow.insertCell();
                                         let cell4 = mainRow.insertCell();
                                         cell1.innerHTML = key;
-                                        cell2.innerHTML = data[key][0][0]; // Frequency (from the first entry)
+                                        let lastIndex = data[key].length - 1; // Get the index of the last entry
+                                        cell2.innerHTML = data[key][lastIndex][0]; // Frequency (from the last entry)
+                                        let rssiValue = data[key][lastIndex][1];
+                                        cell3.innerHTML = rssiValue === 0 ? 'unknown' : rssiValue; // Signal Strength (from the last entry)
+
+                                        //cell2.innerHTML = data[key][0][0]; // Frequency (from the first entry)
                                         
                                         // Check for RSSI value and display 'unknown' if it is 0
-                                        let rssiValue = data[key][0][1];
-                                        cell3.innerHTML = rssiValue === 0 ? 'unknown' : rssiValue; // Signal Strength (from the first entry)
+                                        //let rssiValue = data[key][0][1];
+                                        //cell3.innerHTML = rssiValue === 0 ? 'unknown' : rssiValue; // Signal Strength (from the first entry)
                     
                                         // Create a Bootstrap styled button
                                         let expandBtn = document.createElement('button');
