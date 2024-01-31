@@ -67,7 +67,8 @@
                             <div style="text-align:center;">
                                 <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
-                                <button class="transmit-button" onclick="transmit433()">Transmit Data</button><br>
+                                <button class="transmit-button" onclick="transmit433()">Transmit Data</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort1()">Clear Data</button>
                                 <input type="checkbox" id="autoscroll-port1" checked>
                                 <label for="autoscroll-port1">Autoscroll</label>
                                 <p id="status-label433" style="text-align: center">Status: Checking...</p>
@@ -75,6 +76,22 @@
                                     <div id="indicator433" class="indicator"></div>
                                 </div>
                             </div>
+                            <script>
+                                function clearDataPort1() {
+                                    var serialDataDiv1 = document.getElementById('serial-data-port1');
+                                    serialDataDiv1.innerHTML = '';
+                                }
+                            
+                                function clearDataPort2() {
+                                    var serialDataDiv2 = document.getElementById('serial-data-port2');
+                                    serialDataDiv2.innerHTML = '';
+                                }
+                            
+                                function clearDataPort3() {
+                                    var serialDataDiv3 = document.getElementById('serial-data-port3');
+                                    serialDataDiv3.innerHTML = '';
+                                }
+                            </script>
                             
                             <!-- JavaScript for updating the indicator -->
                             <script>
@@ -252,7 +269,8 @@
                             <div style="text-align:center;">
                                 <button class="styled-button" onclick="promptUser868()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Serial Port</button>
-                                <button class="transmit-button" onclick="transmit868()">Transmit Data</button><br>
+                                <button class="transmit-button" onclick="transmit868()">Transmit Data</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort2()">Clear Data</button>
                                 <input type="checkbox" id="autoscroll-port2" checked>
                                 <label for="autoscroll-port2">Autoscroll</label>
                                 <p id="status-label868" style="text-align: center">Status: Checking...</p>
@@ -439,7 +457,8 @@
                             <div style="text-align:center;">
                                 <button class="styled-button" onclick="promptUser915()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Serial Port</button>
-                                <button class="transmit-button" onclick="transmit915()">Transmit Data</button><br>
+                                <button class="transmit-button" onclick="transmit915()">Transmit Data</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort3()">Clear Data</button>
                                 <input type="checkbox" id="autoscroll-port3" checked>
                                 <label for="autoscroll-port3">Autoscroll</label>
                                 <p id="status-label915" style="text-align: center">Status: Checking...</p>

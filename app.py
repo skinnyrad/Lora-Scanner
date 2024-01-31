@@ -73,7 +73,8 @@ def read_serial_data(port, ser, buffer):
             time.sleep(0.1)
 
         except Exception as e:
-            print(f"Error: {e}")
+            #print("Could not access Serial Port")
+            #print(f"Error: {e}")
             pass
 
 def parse_and_store_data():

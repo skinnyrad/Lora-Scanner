@@ -76,6 +76,22 @@
 
                         <br>
                         <script>
+                            function clearDataPort1() {
+                                var serialDataDiv1 = document.getElementById('serial-data-port1');
+                                serialDataDiv1.innerHTML = '';
+                            }
+                        
+                            function clearDataPort2() {
+                                var serialDataDiv2 = document.getElementById('serial-data-port2');
+                                serialDataDiv2.innerHTML = '';
+                            }
+                        
+                            function clearDataPort3() {
+                                var serialDataDiv3 = document.getElementById('serial-data-port3');
+                                serialDataDiv3.innerHTML = '';
+                            }
+                        </script>
+                        <script>
                             let selectedDeviceName = null; // Global variable to store the selected device name
                             let dataCache = {}; // Cache for storing fetched data
                         
@@ -197,7 +213,8 @@
                                 <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
                                 <button class="transmit-button" onclick="transmit433()">Start Beacon</button>
-                                <button class="disconnect-button" onclick="confirmStopTransmission433()">Stop Beacon</button><br>
+                                <button class="disconnect-button" onclick="confirmStopTransmission433()">Stop Beacon</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort1()">Clear Data</button>
                                 <input type="checkbox" id="autoscroll-port1" checked>
                                 <label for="autoscroll-port1">Autoscroll</label>
                                 <p id="status-label433" style="text-align: center">Status: Checking...</p>
@@ -433,7 +450,8 @@
                                 <button class="styled-button" onclick="promptUser868()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Serial Port</button>
                                 <button class="transmit-button" onclick="transmit868()">Start Beacon</button>
-                                <button class="disconnect-button" onclick="confirmStopTransmission868()">Stop Beacon</button><br>
+                                <button class="disconnect-button" onclick="confirmStopTransmission868()">Stop Beacon</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort2()">Clear Data</button>
                                 <input type="checkbox" id="autoscroll-port2" checked>
                                 <label for="autoscroll-port2">Autoscroll</label>
                                 <p id="status-label868" style="text-align: center">Status: Checking...</p>
@@ -442,7 +460,6 @@
                                 </div>
                             </div>
                         </div>
-                        
                         <script>
                                 function updateIndicator868() {
                                     // Fetch the status from the Flask route
@@ -657,6 +674,7 @@
                 </div>
                 <br><br>
 
+                <!--915 MHz-->
                 <div class="resume-section-content">
                     <div class="collapse" id="collapse915">
                     <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
@@ -668,7 +686,8 @@
                                 <button class="styled-button" onclick="promptUser915()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Serial Port</button>
                                 <button class="transmit-button" onclick="transmit915()">Start Beacon</button>
-                                <button class="disconnect-button" onclick="confirmStopTransmission915()">Stop Beacon</button><br>
+                                <button class="disconnect-button" onclick="confirmStopTransmission915()">Stop Beacon</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort3()">Clear Data</button>
                                 <input type="checkbox" id="autoscroll-port3" checked>
                                 <label for="autoscroll-port3">Autoscroll</label>
                                 <p id="status-label915" style="text-align: center">Status: Checking...</p>
