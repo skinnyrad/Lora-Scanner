@@ -79,46 +79,51 @@
                             let selectedDeviceName = null; // Global variable to store the selected device name
                             let dataCache = {}; // Cache for storing fetched data
                         
-                            function updateTableData() {
-                                fetch('/get_table_data')
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                                        tableBody.innerHTML = ''; // Clear existing table rows
+                            
 
-                                        let isRowSelected = selectedDeviceName !== null;
+                        function updateTableData() {
+                            fetch('/get_table_data')
+                                .then(response => response.json())
+                                .then(data => {
+                                    const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                                    tableBody.innerHTML = ''; // Clear existing table rows
 
-                                        for (let key in data) {
-                                            let row = tableBody.insertRow();
-                                            row.addEventListener('click', function() {
-                                                // Handle row click event for selection
-                                                handleRowSelection(row, key);
-                                            });
+                                    let isRowSelected = selectedDeviceName !== null;
 
-                                            let cell1 = row.insertCell();
-                                            let cell2 = row.insertCell();
-                                            let cell3 = row.insertCell();
-                                            cell1.innerHTML = key; // Device Name
-                                            
-                                            // Assuming that the latest data is the most relevant
-                                            let latestData = data[key][data[key].length - 1];
-                                            cell2.innerHTML = latestData[0]; // Frequency
-                                            cell3.innerHTML = latestData[1]; // Signal Strength
+                                    for (let key in data) {
+                                        let row = tableBody.insertRow();
+                                        row.addEventListener('click', function() {
+                                            // Handle row click event for selection
+                                            handleRowSelection(row, key);
+                                        });
 
-                                            // Apply hiding logic based on selection
-                                            if (isRowSelected) {
-                                                if (key !== selectedDeviceName) {
-                                                    row.classList.add('hidden-row');
-                                                } else {
-                                                    row.classList.add('selected-row');
-                                                }
+                                        let cell1 = row.insertCell();
+                                        let cell2 = row.insertCell();
+                                        let cell3 = row.insertCell();
+                                        cell1.innerHTML = key; // Device Name
+                                        
+                                        // Assuming that the latest data is the most relevant
+                                        let latestData = data[key][data[key].length - 1];
+                                        cell2.innerHTML = latestData[0]; // Frequency
+
+                                        // Check for RSSI value and display 'unknown' if it is 0
+                                        let rssiValue = latestData[1];
+                                        cell3.innerHTML = rssiValue === 0 ? 'unknown' : rssiValue; // Signal Strength
+
+                                        // Apply hiding logic based on selection
+                                        if (isRowSelected) {
+                                            if (key !== selectedDeviceName) {
+                                                row.classList.add('hidden-row');
+                                            } else {
+                                                row.classList.add('selected-row');
                                             }
                                         }
+                                    }
 
-                                        updateSelectedDataDisplay(); // Update the selected data display after refreshing the table
-                                    })
-                                    .catch(error => console.error('Error:', error));
-                            }
+                                    updateSelectedDataDisplay(); // Update the selected data display after refreshing the table
+                                })
+                                .catch(error => console.error('Error:', error));
+                        }
 
                             function handleRowSelection(row, key) {
                                 // Reset all rows

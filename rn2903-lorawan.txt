@@ -1,0 +1,1 @@
+python3 lorawan.py --joinmode otaa --appkey "814BFA6E589EE49376628B0CDD642E1F" --deveui "70B3D57ED80022D3" --appeui 0000000000000000 /dev/tty.usbserial-1140
