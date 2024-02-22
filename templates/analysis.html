@@ -67,12 +67,31 @@
                             <div style="text-align:center;">
                                 <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
-                                <button class="transmit-button" onclick="transmit433()">Transmit Data</button><br>
+                                <button class="transmit-button" onclick="transmit433()">Transmit Data</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort1()">Clear Data</button>
+                                <input type="checkbox" id="autoscroll-port1" checked>
+                                <label for="autoscroll-port1">Autoscroll</label>
                                 <p id="status-label433" style="text-align: center">Status: Checking...</p>
                                 <div class="indicator-container">
                                     <div id="indicator433" class="indicator"></div>
                                 </div>
                             </div>
+                            <script>
+                                function clearDataPort1() {
+                                    var serialDataDiv1 = document.getElementById('serial-data-port1');
+                                    serialDataDiv1.innerHTML = '';
+                                }
+                            
+                                function clearDataPort2() {
+                                    var serialDataDiv2 = document.getElementById('serial-data-port2');
+                                    serialDataDiv2.innerHTML = '';
+                                }
+                            
+                                function clearDataPort3() {
+                                    var serialDataDiv3 = document.getElementById('serial-data-port3');
+                                    serialDataDiv3.innerHTML = '';
+                                }
+                            </script>
                             
                             <!-- JavaScript for updating the indicator -->
                             <script>
@@ -124,9 +143,12 @@
                                 socket.on('serial_data_port1', function(data) {
                                     var serialDataDiv = document.getElementById('serial-data-port1');
                                     serialDataDiv.innerHTML += data.data + '<br>';
-                                    // Scroll to the bottom for new data
-                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                    var autoscrollCheckbox = document.getElementById('autoscroll-port1');
+                                    if (autoscrollCheckbox.checked) {
+                                        serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                    }
                                 });
+
                                 </script>
 
                                 <script>
@@ -247,7 +269,10 @@
                             <div style="text-align:center;">
                                 <button class="styled-button" onclick="promptUser868()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Serial Port</button>
-                                <button class="transmit-button" onclick="transmit868()">Transmit Data</button><br>
+                                <button class="transmit-button" onclick="transmit868()">Transmit Data</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort2()">Clear Data</button>
+                                <input type="checkbox" id="autoscroll-port2" checked>
+                                <label for="autoscroll-port2">Autoscroll</label>
                                 <p id="status-label868" style="text-align: center">Status: Checking...</p>
                                 <div class="indicator-container">
                                     <div id="indicator868" class="indicator"></div>
@@ -288,39 +313,29 @@
                                 // Periodically check and update the indicator (e.g., every 5 seconds)
                                 setInterval(updateIndicator868, 5000);
                             </script>
-                            <script type="text/javascript">
-                                var socket = io.connect('http://' + document.domain + ':' + location.port);
-                            
-                                socket.on('serial_data_port1', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port1');
-                                if (data.data instanceof Array) {
-                                    data.data.forEach(function(line) {
-                                        serialDataDiv.innerHTML += line + '<br>';
-                                    });
-                                } 
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
-                            });
-
-                                </script>
 
                         <script>
                             // For port2
+                            var socket = io.connect('http://' + document.domain + ':' + location.port);
+
                             socket.on('initial_serial_data_port2', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port2');
+                                var serialDataDiv2 = document.getElementById('serial-data-port2');
                                 data.data.forEach(function(line) {
-                                    serialDataDiv.innerHTML += line + '<br>';
+                                    serialDataDiv2.innerHTML += line + '<br>';
                                 });
                                 // Scroll to the bottom for new data
                                 //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
                             });
                         
                             socket.on('serial_data_port2', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port2');
-                                serialDataDiv.innerHTML += data.data + '<br>';
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                var serialDataDiv2 = document.getElementById('serial-data-port2');
+                                serialDataDiv2.innerHTML += data.data + '<br>';
+                                var autoscrollCheckbox2 = document.getElementById('autoscroll-port2');
+                                if (autoscrollCheckbox2.checked) {
+                                    serialDataDiv2.scrollTop = serialDataDiv2.scrollHeight;
+                                }
                             });
+
                         </script>
 
                         <script>
@@ -442,7 +457,10 @@
                             <div style="text-align:center;">
                                 <button class="styled-button" onclick="promptUser915()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Serial Port</button>
-                                <button class="transmit-button" onclick="transmit915()">Transmit Data</button><br>
+                                <button class="transmit-button" onclick="transmit915()">Transmit Data</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort3()">Clear Data</button>
+                                <input type="checkbox" id="autoscroll-port3" checked>
+                                <label for="autoscroll-port3">Autoscroll</label>
                                 <p id="status-label915" style="text-align: center">Status: Checking...</p>
                                 <div class="indicator-container">
                                     <div id="indicator915" class="indicator"></div>
@@ -485,21 +503,26 @@
                         </script>
                         <script>
                             // For port3
+                            var socket = io.connect('http://' + document.domain + ':' + location.port);
+
                             socket.on('initial_serial_data_port3', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port3');
+                                var serialDataDiv3 = document.getElementById('serial-data-port3');
                                 data.data.forEach(function(line) {
-                                    serialDataDiv.innerHTML += line + '<br>';
+                                    serialDataDiv3.innerHTML += line + '<br>';
                                 });
                                 // Scroll to the bottom for new data
                                 //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
                             });
                         
                             socket.on('serial_data_port3', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port3');
-                                serialDataDiv.innerHTML += data.data + '<br>';
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                var serialDataDiv3 = document.getElementById('serial-data-port3');
+                                serialDataDiv3.innerHTML += data.data + '<br>';
+                                var autoscrollCheckbox3 = document.getElementById('autoscroll-port3');
+                                if (autoscrollCheckbox3.checked) {
+                                    serialDataDiv3.scrollTop = serialDataDiv3.scrollHeight;
+                                }
                             });
+
                         </script>
 
                         <script>

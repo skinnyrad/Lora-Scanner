@@ -62,11 +62,26 @@
                             <tbody>
                                 <!-- Rows will be inserted here -->
                             </tbody>
-                        </table>                                              
+                        </table><br><br>
+                        <div style="text-align:center;">
+                            <button class="transmit-button" onclick="manualUpdateTable()">Refresh Table</button>  
+                        </div>
+                                                                    
                     </div>
-                
+                    
                     <script>
                         let expandedRows = {};
+
+                        function manualUpdateTable() {
+                            // Display a loading alert
+                            Swal.fire({
+                                title: 'Table Updated!',
+                                icon: 'success'
+                            });
+
+                            updateTableData();
+                        }
+
                         function updateTableData() {
                             fetch('/get_table_data')
                                 .then(response => response.json())
@@ -80,9 +95,17 @@
                                         let cell3 = mainRow.insertCell();
                                         let cell4 = mainRow.insertCell();
                                         cell1.innerHTML = key;
-                                        cell2.innerHTML = data[key][0][0]; // Frequency (from the first entry)
-                                        cell3.innerHTML = data[key][0][1]; // Signal Strength (from the first entry)
+                                        let lastIndex = data[key].length - 1; // Get the index of the last entry
+                                        cell2.innerHTML = data[key][lastIndex][0]; // Frequency (from the last entry)
+                                        let rssiValue = data[key][lastIndex][1];
+                                        cell3.innerHTML = rssiValue === 0 ? 'unknown' : rssiValue; // Signal Strength (from the last entry)
 
+                                        //cell2.innerHTML = data[key][0][0]; // Frequency (from the first entry)
+                                        
+                                        // Check for RSSI value and display 'unknown' if it is 0
+                                        //let rssiValue = data[key][0][1];
+                                        //cell3.innerHTML = rssiValue === 0 ? 'unknown' : rssiValue; // Signal Strength (from the first entry)
+                    
                                         // Create a Bootstrap styled button
                                         let expandBtn = document.createElement('button');
                                         expandBtn.classList.add('btn', 'btn-secondary', 'btn-sm'); // Bootstrap button classes
@@ -90,21 +113,21 @@
                                         expandBtn.onclick = function() {
                                             let deviceKey = key; // Capture the current device key
                                             let isExpanded = !expandedRows[deviceKey]; // Toggle the expanded state
-
+                    
                                             // Show or hide the expandable rows
                                             let nextRow = mainRow.nextSibling;
                                             while (nextRow && nextRow.classList.contains('expandable-row')) {
                                                 nextRow.style.display = isExpanded ? 'table-row' : 'none';
                                                 nextRow = nextRow.nextSibling;
                                             }
-
+                    
                                             // Update the button text and expandedRows object
                                             expandBtn.innerHTML = isExpanded ? 'Hide Values' : 'Show Values';
                                             expandedRows[deviceKey] = isExpanded;
                                         };
                                         cell4.appendChild(expandBtn);
                                         cell4.style.textAlign = 'center'; // Center align the button
-
+                    
                                         // Add expandable rows for each decoded value
                                         data[key].forEach(entry => {
                                             let expandableRow = tableBody.insertRow();
@@ -114,7 +137,7 @@
                                             cell.colSpan = "4";
                                             cell.innerHTML = `Decoded Value: ${entry[2]}`;
                                         });
-
+                    
                                         if (expandedRows[key]) {
                                             let nextRow = mainRow.nextSibling;
                                             while (nextRow && nextRow.classList.contains('expandable-row')) {
@@ -126,14 +149,14 @@
                                 })
                                 .catch(error => console.error('Error:', error));
                         }
-
-                            // Initial update of the table
-                            updateTableData();
-
-                            // Periodically update the table every 30 seconds (30000 milliseconds)
-                            setInterval(updateTableData, 30000);
-
+                    
+                        // Initial update of the table
+                        updateTableData();
+                    
+                        // Periodically update the table every 30 seconds (30000 milliseconds)
+                        setInterval(updateTableData, 30000);
                     </script>
+                    
                     
             </section>
             <hr class="m-0" />

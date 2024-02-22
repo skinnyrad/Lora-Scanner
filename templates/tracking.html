@@ -76,49 +76,70 @@
 
                         <br>
                         <script>
+                            function clearDataPort1() {
+                                var serialDataDiv1 = document.getElementById('serial-data-port1');
+                                serialDataDiv1.innerHTML = '';
+                            }
+                        
+                            function clearDataPort2() {
+                                var serialDataDiv2 = document.getElementById('serial-data-port2');
+                                serialDataDiv2.innerHTML = '';
+                            }
+                        
+                            function clearDataPort3() {
+                                var serialDataDiv3 = document.getElementById('serial-data-port3');
+                                serialDataDiv3.innerHTML = '';
+                            }
+                        </script>
+                        <script>
                             let selectedDeviceName = null; // Global variable to store the selected device name
                             let dataCache = {}; // Cache for storing fetched data
                         
-                            function updateTableData() {
-                                fetch('/get_table_data')
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-                                        tableBody.innerHTML = ''; // Clear existing table rows
+                            
 
-                                        let isRowSelected = selectedDeviceName !== null;
+                        function updateTableData() {
+                            fetch('/get_table_data')
+                                .then(response => response.json())
+                                .then(data => {
+                                    const tableBody = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+                                    tableBody.innerHTML = ''; // Clear existing table rows
 
-                                        for (let key in data) {
-                                            let row = tableBody.insertRow();
-                                            row.addEventListener('click', function() {
-                                                // Handle row click event for selection
-                                                handleRowSelection(row, key);
-                                            });
+                                    let isRowSelected = selectedDeviceName !== null;
 
-                                            let cell1 = row.insertCell();
-                                            let cell2 = row.insertCell();
-                                            let cell3 = row.insertCell();
-                                            cell1.innerHTML = key; // Device Name
-                                            
-                                            // Assuming that the latest data is the most relevant
-                                            let latestData = data[key][data[key].length - 1];
-                                            cell2.innerHTML = latestData[0]; // Frequency
-                                            cell3.innerHTML = latestData[1]; // Signal Strength
+                                    for (let key in data) {
+                                        let row = tableBody.insertRow();
+                                        row.addEventListener('click', function() {
+                                            // Handle row click event for selection
+                                            handleRowSelection(row, key);
+                                        });
 
-                                            // Apply hiding logic based on selection
-                                            if (isRowSelected) {
-                                                if (key !== selectedDeviceName) {
-                                                    row.classList.add('hidden-row');
-                                                } else {
-                                                    row.classList.add('selected-row');
-                                                }
+                                        let cell1 = row.insertCell();
+                                        let cell2 = row.insertCell();
+                                        let cell3 = row.insertCell();
+                                        cell1.innerHTML = key; // Device Name
+                                        
+                                        // Assuming that the latest data is the most relevant
+                                        let latestData = data[key][data[key].length - 1];
+                                        cell2.innerHTML = latestData[0]; // Frequency
+
+                                        // Check for RSSI value and display 'unknown' if it is 0
+                                        let rssiValue = latestData[1];
+                                        cell3.innerHTML = rssiValue === 0 ? 'unknown' : rssiValue; // Signal Strength
+
+                                        // Apply hiding logic based on selection
+                                        if (isRowSelected) {
+                                            if (key !== selectedDeviceName) {
+                                                row.classList.add('hidden-row');
+                                            } else {
+                                                row.classList.add('selected-row');
                                             }
                                         }
+                                    }
 
-                                        updateSelectedDataDisplay(); // Update the selected data display after refreshing the table
-                                    })
-                                    .catch(error => console.error('Error:', error));
-                            }
+                                    updateSelectedDataDisplay(); // Update the selected data display after refreshing the table
+                                })
+                                .catch(error => console.error('Error:', error));
+                        }
 
                             function handleRowSelection(row, key) {
                                 // Reset all rows
@@ -145,7 +166,7 @@
                             updateTableData();
 
                             // Periodically update the table every second
-                            setInterval(updateTableData, 1000);
+                            setInterval(updateTableData, 10000);
 
 
 
@@ -192,7 +213,10 @@
                                 <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
                                 <button class="transmit-button" onclick="transmit433()">Start Beacon</button>
-                                <button class="disconnect-button" onclick="confirmStopTransmission433()">Stop Beacon</button><br>
+                                <button class="disconnect-button" onclick="confirmStopTransmission433()">Stop Beacon</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort1()">Clear Data</button>
+                                <input type="checkbox" id="autoscroll-port1" checked>
+                                <label for="autoscroll-port1">Autoscroll</label>
                                 <p id="status-label433" style="text-align: center">Status: Checking...</p>
                                 <div class="indicator-container">
                                     <div id="indicator433" class="indicator"></div>
@@ -249,9 +273,12 @@
                                 socket.on('serial_data_port1', function(data) {
                                     var serialDataDiv = document.getElementById('serial-data-port1');
                                     serialDataDiv.innerHTML += data.data + '<br>';
-                                    // Scroll to the bottom for new data
-                                    //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                    var autoscrollCheckbox = document.getElementById('autoscroll-port1');
+                                    if (autoscrollCheckbox.checked) {
+                                        serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                    }
                                 });
+
                                 </script>
 
                                 <script>
@@ -320,23 +347,32 @@
 
                                     function transmit433() {
                                         Swal.fire({
-                                            title: 'Enter data to transmit:',
-                                            input: 'text',
-                                            inputAttributes: {
-                                                autocapitalize: 'off'
-                                            },
+                                            title: 'Enter data to transmit and set interval:',
+                                            html:
+                                                '<input id="swal-input1" class="swal2-input" placeholder="Enter data">' +
+                                                '<input id="swal-input2" class="swal2-input" placeholder="Interval in milliseconds">',
+                                            focusConfirm: false,
                                             showCancelButton: true,
                                             confirmButtonText: 'Submit',
                                             cancelButtonText: 'Cancel',
-                                            showLoaderOnConfirm: true,
-                                            preConfirm: (value) => {
-                                                return startTransmission433(value); // Call the function to start transmission
-                                            },
-                                            allowOutsideClick: () => !Swal.isLoading()
+                                            preConfirm: () => {
+                                                const data = document.getElementById('swal-input1').value;
+                                                const interval = document.getElementById('swal-input2').value;
+
+                                                if (!data || !interval) {
+                                                    Swal.showValidationMessage('Please enter both data and interval');
+                                                } else if (isNaN(interval) || interval < 1000) { // Ensuring the interval is a number and at least 1 second (1000 milliseconds)
+                                                    Swal.showValidationMessage('Please enter a valid interval (number >= 1000)');
+                                                } else {
+                                                    return { data: data, interval: interval };
+                                                }
+                                            }
                                         }).then((result) => {
-                                            if (result.isConfirmed) {
+                                            if (result.isConfirmed && result.value) {
+                                                startTransmission433(result.value.data, result.value.interval);
                                                 Swal.fire({
                                                     title: 'Transmission Started!',
+                                                    html: `Data: ${result.value.data}<br>Interval: ${result.value.interval} milliseconds`,
                                                     icon: 'success'
                                                 });
                                             }
@@ -344,17 +380,19 @@
                                     }
 
 
-                                    function startTransmission433(data) {
+
+                                    function startTransmission433(data, interval) {
                                         if (transmitIntervalId433) {
                                             clearInterval(transmitIntervalId433); // Clear existing interval
                                         }
                                         transmitIntervalId433 = setInterval(() => {
                                             sendTransmissionData433(data);
-                                        }, 10000); // Transmit data every 10 seconds
+                                        }, parseInt(interval)); // Use the user-provided interval, ensuring it's an integer
 
                                         // Send the first transmission immediately
-                                        return sendTransmissionData433(data);
+                                        sendTransmissionData433(data);
                                     }
+
 
 
                                     function sendTransmissionData433(data) {
@@ -423,14 +461,16 @@
                                 <button class="styled-button" onclick="promptUser868()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Serial Port</button>
                                 <button class="transmit-button" onclick="transmit868()">Start Beacon</button>
-                                <button class="disconnect-button" onclick="confirmStopTransmission868()">Stop Beacon</button><br>
+                                <button class="disconnect-button" onclick="confirmStopTransmission868()">Stop Beacon</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort2()">Clear Data</button>
+                                <input type="checkbox" id="autoscroll-port2" checked>
+                                <label for="autoscroll-port2">Autoscroll</label>
                                 <p id="status-label868" style="text-align: center">Status: Checking...</p>
                                 <div class="indicator-container">
                                     <div id="indicator868" class="indicator"></div>
                                 </div>
                             </div>
                         </div>
-                        
                         <script>
                                 function updateIndicator868() {
                                     // Fetch the status from the Flask route
@@ -464,39 +504,26 @@
                                 // Periodically check and update the indicator (e.g., every 5 seconds)
                                 setInterval(updateIndicator868, 5000);
                             </script>
-                            <script type="text/javascript">
-                                var socket = io.connect('http://' + document.domain + ':' + location.port);
-                            
-                                socket.on('serial_data_port1', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port1');
-                                if (data.data instanceof Array) {
-                                    data.data.forEach(function(line) {
-                                        serialDataDiv.innerHTML += line + '<br>';
-                                    });
-                                } 
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
-                            });
-
-                                </script>
 
                         <script>
                             // For port2
+                            var socket = io.connect('http://' + document.domain + ':' + location.port);
                             socket.on('initial_serial_data_port2', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port2');
+                                var serialDataDiv2 = document.getElementById('serial-data-port2');
                                 data.data.forEach(function(line) {
-                                    serialDataDiv.innerHTML += line + '<br>';
+                                    serialDataDiv2.innerHTML += line + '<br>';
                                 });
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
                             });
                         
                             socket.on('serial_data_port2', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port2');
-                                serialDataDiv.innerHTML += data.data + '<br>';
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                var serialDataDiv2 = document.getElementById('serial-data-port2');
+                                serialDataDiv2.innerHTML += data.data + '<br>';
+                                var autoscrollCheckbox2 = document.getElementById('autoscroll-port2');
+                                if (autoscrollCheckbox2.checked) {
+                                    serialDataDiv2.scrollTop = serialDataDiv2.scrollHeight;
+                                }
                             });
+
                         </script>
 
                         <script>
@@ -566,23 +593,32 @@
 
                             function transmit868() {
                                 Swal.fire({
-                                    title: 'Enter data to transmit:',
-                                    input: 'text',
-                                    inputAttributes: {
-                                        autocapitalize: 'off'
-                                    },
+                                    title: 'Enter data to transmit and set interval:',
+                                    html:
+                                        '<input id="swal-input1-868" class="swal2-input" placeholder="Enter data">' +
+                                        '<input id="swal-input2-868" class="swal2-input" placeholder="Interval in milliseconds">',
+                                    focusConfirm: false,
                                     showCancelButton: true,
                                     confirmButtonText: 'Submit',
                                     cancelButtonText: 'Cancel',
-                                    showLoaderOnConfirm: true,
-                                    preConfirm: (value) => {
-                                        return startTransmission868(value); // Call the function to start transmission
-                                    },
-                                    allowOutsideClick: () => !Swal.isLoading()
+                                    preConfirm: () => {
+                                        const data = document.getElementById('swal-input1-868').value;
+                                        const interval = document.getElementById('swal-input2-868').value;
+
+                                        if (!data || !interval) {
+                                            Swal.showValidationMessage('Please enter both data and interval');
+                                        } else if (isNaN(interval) || interval < 1000) {
+                                            Swal.showValidationMessage('Please enter a valid interval (number >= 1000)');
+                                        } else {
+                                            return { data: data, interval: interval };
+                                        }
+                                    }
                                 }).then((result) => {
-                                    if (result.isConfirmed) {
+                                    if (result.isConfirmed && result.value) {
+                                        startTransmission868(result.value.data, result.value.interval);
                                         Swal.fire({
                                             title: 'Transmission Started!',
+                                            html: `Data: ${result.value.data}<br>Interval: ${result.value.interval} milliseconds`,
                                             icon: 'success'
                                         });
                                     }
@@ -590,17 +626,19 @@
                             }
 
 
-                            function startTransmission868(data) {
+
+                            function startTransmission868(data, interval) {
                                 if (transmitIntervalId868) {
                                     clearInterval(transmitIntervalId868); // Clear existing interval
                                 }
                                 transmitIntervalId868 = setInterval(() => {
                                     sendTransmissionData868(data);
-                                }, 10000); // Transmit data every 10 seconds
+                                }, parseInt(interval));
 
                                 // Send the first transmission immediately
-                                return sendTransmissionData868(data);
+                                sendTransmissionData868(data);
                             }
+
 
 
                             function sendTransmissionData868(data) {
@@ -658,6 +696,7 @@
                 </div>
                 <br><br>
 
+                <!--915 MHz-->
                 <div class="resume-section-content">
                     <div class="collapse" id="collapse915">
                     <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
@@ -669,7 +708,10 @@
                                 <button class="styled-button" onclick="promptUser915()">Connect Serial Port</button>
                                 <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Serial Port</button>
                                 <button class="transmit-button" onclick="transmit915()">Start Beacon</button>
-                                <button class="disconnect-button" onclick="confirmStopTransmission915()">Stop Beacon</button><br>
+                                <button class="disconnect-button" onclick="confirmStopTransmission915()">Stop Beacon</button><br><br>
+                                <button class="transmit-button" onclick="clearDataPort3()">Clear Data</button>
+                                <input type="checkbox" id="autoscroll-port3" checked>
+                                <label for="autoscroll-port3">Autoscroll</label>
                                 <p id="status-label915" style="text-align: center">Status: Checking...</p>
                                 <div class="indicator-container">
                                     <div id="indicator915" class="indicator"></div>
@@ -712,21 +754,24 @@
                         </script>
                         <script>
                             // For port3
+                            var socket = io.connect('http://' + document.domain + ':' + location.port);
                             socket.on('initial_serial_data_port3', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port3');
+                                var serialDataDiv3 = document.getElementById('serial-data-port3');
                                 data.data.forEach(function(line) {
-                                    serialDataDiv.innerHTML += line + '<br>';
+                                    serialDataDiv3.innerHTML += line + '<br>';
                                 });
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+
                             });
                         
                             socket.on('serial_data_port3', function(data) {
-                                var serialDataDiv = document.getElementById('serial-data-port3');
-                                serialDataDiv.innerHTML += data.data + '<br>';
-                                // Scroll to the bottom for new data
-                                //serialDataDiv.scrollTop = serialDataDiv.scrollHeight;
+                                var serialDataDiv3 = document.getElementById('serial-data-port3');
+                                serialDataDiv3.innerHTML += data.data + '<br>';
+                                var autoscrollCheckbox3 = document.getElementById('autoscroll-port3');
+                                if (autoscrollCheckbox3.checked) {
+                                    serialDataDiv3.scrollTop = serialDataDiv3.scrollHeight;
+                                }
                             });
+
                         </script>
 
                         <script>
@@ -795,41 +840,52 @@
                         
                             function transmit915() {
                                 Swal.fire({
-                                    title: 'Enter data to transmit:',
-                                    input: 'text',
-                                    inputAttributes: {
-                                        autocapitalize: 'off'
-                                    },
+                                    title: 'Enter data to transmit and set interval:',
+                                    html:
+                                        '<input id="swal-input1-915" class="swal2-input" placeholder="Enter data">' +
+                                        '<input id="swal-input2-915" class="swal2-input" placeholder="Interval in milliseconds">',
+                                    focusConfirm: false,
                                     showCancelButton: true,
                                     confirmButtonText: 'Submit',
                                     cancelButtonText: 'Cancel',
-                                    showLoaderOnConfirm: true,
-                                    preConfirm: (value) => {
-                                        return startTransmission915(value); // Call the function to start transmission
-                                    },
-                                    allowOutsideClick: () => !Swal.isLoading()
+                                    preConfirm: () => {
+                                        const data = document.getElementById('swal-input1-915').value;
+                                        const interval = document.getElementById('swal-input2-915').value;
+
+                                        if (!data || !interval) {
+                                            Swal.showValidationMessage('Please enter both data and interval');
+                                        } else if (isNaN(interval) || interval < 1000) {
+                                            Swal.showValidationMessage('Please enter a valid interval (number >= 1000)');
+                                        } else {
+                                            return { data: data, interval: interval };
+                                        }
+                                    }
                                 }).then((result) => {
-                                    if (result.isConfirmed) {
+                                    if (result.isConfirmed && result.value) {
+                                        startTransmission915(result.value.data, result.value.interval);
                                         Swal.fire({
                                             title: 'Transmission Started!',
+                                            html: `Data: ${result.value.data}<br>Interval: ${result.value.interval} milliseconds`,
                                             icon: 'success'
                                         });
                                     }
                                 });
                             }
+
                         
                         
-                            function startTransmission915(data) {
+                            function startTransmission915(data, interval) {
                                 if (transmitIntervalId915) {
                                     clearInterval(transmitIntervalId915); // Clear existing interval
                                 }
                                 transmitIntervalId915 = setInterval(() => {
                                     sendTransmissionData915(data);
-                                }, 10000); // Transmit data every 10 seconds
-                        
+                                }, parseInt(interval));
+
                                 // Send the first transmission immediately
-                                return sendTransmissionData915(data);
+                                sendTransmissionData915(data);
                             }
+
                         
                         
                             function sendTransmissionData915(data) {
