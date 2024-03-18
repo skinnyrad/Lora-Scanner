@@ -82,54 +82,55 @@ def read_serial_data(port, ser, buffer):
 
 def parse_and_store_data():
     global surveydata
-    url = "http://10.130.1.1/cgi-bin/log-traffic.has"  # Your target URL
+    global parsed_entries
+
+    # Include the port number (8000) in your gateway URLs
+    gateway_urls = [
+        "http://192.168.1.24:8000/cgi-bin/log-traffic.has",  # Gateway 1 (915 MHz)
+        "http://192.168.1.25:8000/cgi-bin/log-traffic.has"   # Gateway 2 (868 MHz)
+    ]
+
     headers = {
-        "Host": "10.130.1.1",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
         "Accept-Encoding": "gzip, deflate",
         "DNT": "1",
         "Sec-GPC": "1",
-        "Authorization": "Basic cm9vdDpkcmFnaW5v",
+        "Authorization": "Basic cm9vdDpkcmFnaW5v",  # Assumes the same credentials for both gateways
         "Connection": "keep-alive",
-        "Referer": "http://10.130.1.1/cgi-bin/log-lora.has",
         "Upgrade-Insecure-Requests": "1"
     }
 
-    response = requests.get(url, headers=headers)
+    for url in gateway_urls:
+        headers["Host"] = url.split("//")[-1].split("/")[0]  # Dynamically set the Host header
+        response = requests.get(url, headers=headers)
 
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find('table')
-        rows = table.find_all('tr')
-        headers = [header.text.strip() for header in rows[0].find_all('th')][1:]
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            table = soup.find('table')
+            if table:  # Check for a table in the response
+                rows = table.find_all('tr')
+                for row in rows[1:]:  # Skip the header row
+                    cells = row.find_all('td')
+                    cell_data = [cell.text.strip() for cell in cells[1:] if cells.index(cell) < len(headers) + 1]
+                    formatted_row = ' | '.join(cell_data)
 
-        for row in rows[1:]:
-            cells = row.find_all('td')
-            cell_data = [cell.text.strip() for cell in cells[1:] if cells.index(cell) < len(headers) + 1]
-            formatted_row = ' | '.join(cell_data)
+                    dev_id = extract_dev_id(formatted_row)  # Assuming this function is defined elsewhere
+                    freq = extract_freq(formatted_row)  # Assuming this function is defined elsewhere
 
-            dev_id = extract_dev_id(formatted_row)  # Your existing function to extract DevEui or DevAddr
-            freq = extract_freq(formatted_row)  # Your existing function to extract frequency
+                    if dev_id and freq:
+                        entry_identifier = f"{dev_id}_{formatted_row}"
 
-            if dev_id and freq:
-                entry_identifier = f"{dev_id}_{formatted_row}"  # Create a unique identifier for the entry
-                
-                # Only process the entry if we haven't seen this identifier before
-                if entry_identifier not in parsed_entries:
-                    parsed_entries.add(entry_identifier)  # Add the identifier to the set
+                        if entry_identifier not in parsed_entries:
+                            parsed_entries.add(entry_identifier)
+                            if dev_id not in surveydata:
+                                surveydata[dev_id] = []
+                            surveydata[dev_id].append([freq, 0, formatted_row])
 
-                    # Initialize dictionary for dev_id if not present
-                    if dev_id not in surveydata:
-                        surveydata[dev_id] = []
-
-                    # Append new data to the list associated with the DevEui or DevAddr
-                    surveydata[dev_id].append([freq, 0, formatted_row])
-
-        print("Data parsed and stored.")
-    else:
-        print(f"Request failed with status code: {response.status_code}")
+            print(f"Data parsed and stored from {url}.")
+        else:
+            print(f"Request to {url} failed with status code: {response.status_code}")
 
 
     # Schedule the next call to this function
