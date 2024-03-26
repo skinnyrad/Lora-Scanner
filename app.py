@@ -86,8 +86,8 @@ def parse_and_store_data():
 
     # Include the port number (8000) in your gateway URLs
     gateway_urls = [
-        "http://192.168.1.24:8000/cgi-bin/log-traffic.has",  # Gateway 1 (915 MHz)
-        "http://192.168.1.25:8000/cgi-bin/log-traffic.has"   # Gateway 2 (868 MHz)
+        "http://192.168.0.101:8000/cgi-bin/log-traffic.has",  # Gateway 1 (915 MHz)
+        "http://192.168.0.102:8000/cgi-bin/log-traffic.has"   # Gateway 2 (868 MHz)
     ]
 
     headers = {
@@ -103,34 +103,56 @@ def parse_and_store_data():
     }
 
     for url in gateway_urls:
-        headers["Host"] = url.split("//")[-1].split("/")[0]  # Dynamically set the Host header
-        response = requests.get(url, headers=headers)
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                table = soup.find('table')
+                if table:
+                    rows = table.find_all('tr')[1:]  # Skip the header row
+                    
+                    for row in rows:
+                        # Skip hidden rows in this iteration
+                        if row.get('style') == 'display: none;':
+                            continue
+                        
+                        cells = row.find_all('td')
+                        if not cells:
+                            continue
+                        
+                        # Prepare formatted_row from visible cells, skipping the first cell for Chevron icon
+                        formatted_row = ' | '.join(cell.text.strip() for cell in cells[1:])
+                        
+                        # Extract dev_id and freq from the visible row
+                        dev_id = extract_dev_id(formatted_row)
+                        freq = extract_freq(formatted_row)
 
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
-            table = soup.find('table')
-            if table:  # Check for a table in the response
-                rows = table.find_all('tr')
-                for row in rows[1:]:  # Skip the header row
-                    cells = row.find_all('td')
-                    cell_data = [cell.text.strip() for cell in cells[1:] if cells.index(cell) < len(headers) + 1]
-                    formatted_row = ' | '.join(cell_data)
+                        # Extract RSSI from the next hidden row
+                        hidden_row = row.find_next_sibling('tr')
+                        if hidden_row and 'display: none;' in hidden_row.get('style', ''):
+                            hidden_data = hidden_row.td.text.strip()
+                            rssi_match = re.search(r'"Rssi":(-?\d+)', hidden_data)
+                            if rssi_match:
+                                rssi = int(rssi_match.group(1))
+                            else:
+                                rssi = None
+                        else:
+                            rssi = None
 
-                    dev_id = extract_dev_id(formatted_row)  # Assuming this function is defined elsewhere
-                    freq = extract_freq(formatted_row)  # Assuming this function is defined elsewhere
+                        # Save data into the surveydata structure
+                        if dev_id and freq is not None:
+                            entry_identifier = f"{dev_id}_{freq}"
+                            if entry_identifier not in parsed_entries:
+                                parsed_entries.add(entry_identifier)
+                                if dev_id not in surveydata:
+                                    surveydata[dev_id] = []
+                                surveydata[dev_id].append([freq, rssi, formatted_row])
 
-                    if dev_id and freq:
-                        entry_identifier = f"{dev_id}_{formatted_row}"
-
-                        if entry_identifier not in parsed_entries:
-                            parsed_entries.add(entry_identifier)
-                            if dev_id not in surveydata:
-                                surveydata[dev_id] = []
-                            surveydata[dev_id].append([freq, 0, formatted_row])
-
-            print(f"Data parsed and stored from {url}.")
-        else:
-            print(f"Request to {url} failed with status code: {response.status_code}")
+                        print(f"Data parsed and stored from {url}.")
+            else:
+                print(f"Request to {url} failed with status code: {response.status_code}")
+        except Exception as e:
+            print(f"An error occurred while processing {url}: {e}")
 
 
     # Schedule the next call to this function
