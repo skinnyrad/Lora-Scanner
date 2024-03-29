@@ -9,6 +9,7 @@ from collections import deque
 import re
 import requests
 from bs4 import BeautifulSoup
+import ipaddress
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -20,6 +21,9 @@ port3_status = True
 global ser1
 global ser2 
 global ser3
+gateway_ips = {'gateway1': '192.168.0.101',
+               'gateway2': '192.168.0.102',
+               'gateway3': '192.168.0.103'}
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
 parsed_entries = set()
@@ -79,16 +83,35 @@ def read_serial_data(port, ser, buffer):
             #print(f"Error: {e}")
             pass
 
+@app.route('/set_gateways', methods=['POST'])
+def set_gateways():
+    global gateway_ips
+    data = request.form
+    for key in ['gateway1', 'gateway2', 'gateway3']:
+        input_ip = data.get(key, '').strip()
+        if input_ip:  # Proceed only if the input is not empty
+            try:
+                # Validate the IP address
+                ipaddress.ip_address(input_ip)
+                # Update the IP address if valid
+                gateway_ips[key] = input_ip
+            except ValueError:
+                # Return an error if the IP address is invalid
+                return jsonify({"error": f"Invalid IP address provided for {key}"}), 400
+
+    for gateway, ip_address in gateway_ips.items():
+        print(f"Gateway {gateway} has IP address: {ip_address}")
+    return jsonify({"message": "Gateway IPs updated successfully"}), 200
 
 def parse_and_store_data():
     global surveydata
     global parsed_entries
-
+    global gateway_ips
     # Include the port number (8000) in your gateway URLs
     gateway_urls = [
-        "http://192.168.0.101:8000/cgi-bin/log-traffic.has",  # Gateway 1 (915 MHz)
-        "http://192.168.0.102:8000/cgi-bin/log-traffic.has",  # Gateway 2 (868 MHz)
-        "http://192.168.0.103:8000/cgi-bin/log-traffic.has"   # Gateway 3 (915 MHz)
+        f"http://{gateway_ips['gateway1']}:8000/cgi-bin/log-traffic.has",  # Gateway 1
+        f"http://{gateway_ips['gateway2']}:8000/cgi-bin/log-traffic.has",  # Gateway 2
+        f"http://{gateway_ips['gateway3']}:8000/cgi-bin/log-traffic.has"   # Gateway 3
     ]
 
     headers = {
@@ -105,7 +128,7 @@ def parse_and_store_data():
 
     for url in gateway_urls:
         try:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 table = soup.find('table')
@@ -157,7 +180,7 @@ def parse_and_store_data():
 
 
     # Schedule the next call to this function
-    Timer(30, parse_and_store_data).start()  # Call this function every 60 seconds
+    Timer(30, parse_and_store_data).start()  # Call this function every 30 seconds
 
 
 def extract_dev_id(formatted_row):

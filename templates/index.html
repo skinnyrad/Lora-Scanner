@@ -32,7 +32,7 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#about">Home</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/analysis">Analysis Mode</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/survey">Survey Mode</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/tracking">Tracking Mode</a></li>
@@ -60,7 +60,75 @@
                         </p>
                 </div>
             </section>
+            <!-- Add this form within the body where it fits best, possibly under the About section -->
+            <section class="resume-section">
+                <div class="resume-section-content">
+                   <h2 class="mb-0" style="text-align: center;">LoRaWAN Gateway Configuration</h2><br>
+                    <img src="static/assets/img/lorawan.webp" style="width:100%; "><br><br>
+                    <div style="display: flex; justify-content: center; margin-top: 20px;"><button class="transmit-button" id="configureGatewayBtn">Configure Gateway</button></div>
+                </div>
+            </section>
+            
+
         </div>
+
+        <script>
+            document.getElementById('configureGatewayBtn').addEventListener('click', function() {
+                let gatewayIPs = {};
+
+                const ipPrompt = (title) => {
+                    return Swal.fire({
+                        title: title,
+                        input: 'text',
+                        inputPlaceholder: 'Leave empty to keep current IP',
+                        inputValidator: (value) => {
+                            if (value && !value.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
+                                return 'Please enter a valid IP address or leave it empty';
+                            }
+                        }
+                    });
+                };
+
+                ipPrompt('Enter Gateway 1 IP Address').then((result) => {
+                    if (result.value) gatewayIPs.gateway1 = result.value;
+
+                    ipPrompt('Enter Gateway 2 IP Address').then((result) => {
+                        if (result.value) gatewayIPs.gateway2 = result.value;
+
+                        ipPrompt('Enter Gateway 3 IP Address').then((result) => {
+                            if (result.value) gatewayIPs.gateway3 = result.value;
+
+                            // Now send the IPs to the server only if they are not undefined
+                            let queryString = Object.keys(gatewayIPs).reduce((acc, key) => {
+                                if (gatewayIPs[key] !== undefined) {
+                                    acc.push(`${key}=${encodeURIComponent(gatewayIPs[key])}`);
+                                }
+                                return acc;
+                            }, []).join('&');
+
+                            if (queryString) {
+                                fetch('/set_gateways', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded',
+                                    },
+                                    body: queryString
+                                })
+                                .then(response => response.json())
+                                .then(data => Swal.fire('Success', 'Gateway IPs updated successfully', 'success'))
+                                .catch(error => Swal.fire('Error', 'There was an issue updating the Gateway IPs', 'error'));
+                            } else {
+                                Swal.fire('No Changes', 'No IP addresses were changed.', 'info');
+                            }
+                        });
+                    });
+                });
+            });
+
+        </script>
+            
+
+
         <!-- Bootstrap core JS-->
         <script src="static/js/bootstrap.bundle.min.js"></script>
         <!-- Core theme JS-->
