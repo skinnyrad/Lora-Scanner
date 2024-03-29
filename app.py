@@ -142,7 +142,7 @@ def parse_and_store_data():
 
                         # Save data into the surveydata structure
                         if dev_id and freq is not None:
-                            entry_identifier = f"{dev_id}_{freq}"
+                            entry_identifier = f"{dev_id}_{freq}_{formatted_row}"
                             if entry_identifier not in parsed_entries:
                                 parsed_entries.add(entry_identifier)
                                 if dev_id not in surveydata:
@@ -157,7 +157,7 @@ def parse_and_store_data():
 
 
     # Schedule the next call to this function
-    Timer(60, parse_and_store_data).start()  # Call this function every 60 seconds
+    Timer(30, parse_and_store_data).start()  # Call this function every 60 seconds
 
 
 def extract_dev_id(formatted_row):
@@ -370,5 +370,5 @@ def get_table_data():
 
 
 if __name__ == '__main__':
-    Timer(60, parse_and_store_data).start()
+    Timer(30, parse_and_store_data).start()
     socketio.run(app, debug=True)
