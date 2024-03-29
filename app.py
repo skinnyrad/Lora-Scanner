@@ -9,6 +9,7 @@ from collections import deque
 import re
 import requests
 from bs4 import BeautifulSoup
+import ipaddress
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -20,6 +21,9 @@ port3_status = True
 global ser1
 global ser2 
 global ser3
+gateway_ips = {'gateway1': '192.168.0.101',
+               'gateway2': '192.168.0.102',
+               'gateway3': '192.168.0.103'}
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
 parsed_entries = set()
@@ -79,61 +83,104 @@ def read_serial_data(port, ser, buffer):
             #print(f"Error: {e}")
             pass
 
+@app.route('/set_gateways', methods=['POST'])
+def set_gateways():
+    global gateway_ips
+    data = request.form
+    for key in ['gateway1', 'gateway2', 'gateway3']:
+        input_ip = data.get(key, '').strip()
+        if input_ip:  # Proceed only if the input is not empty
+            try:
+                # Validate the IP address
+                ipaddress.ip_address(input_ip)
+                # Update the IP address if valid
+                gateway_ips[key] = input_ip
+            except ValueError:
+                # Return an error if the IP address is invalid
+                return jsonify({"error": f"Invalid IP address provided for {key}"}), 400
+
+    for gateway, ip_address in gateway_ips.items():
+        print(f"Gateway {gateway} has IP address: {ip_address}")
+    return jsonify({"message": "Gateway IPs updated successfully"}), 200
 
 def parse_and_store_data():
     global surveydata
-    url = "http://10.130.1.1/cgi-bin/log-traffic.has"  # Your target URL
+    global parsed_entries
+    global gateway_ips
+    # Include the port number (8000) in your gateway URLs
+    gateway_urls = [
+        f"http://{gateway_ips['gateway1']}:8000/cgi-bin/log-traffic.has",  # Gateway 1
+        f"http://{gateway_ips['gateway2']}:8000/cgi-bin/log-traffic.has",  # Gateway 2
+        f"http://{gateway_ips['gateway3']}:8000/cgi-bin/log-traffic.has"   # Gateway 3
+    ]
+
     headers = {
-        "Host": "10.130.1.1",
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
         "Accept-Encoding": "gzip, deflate",
         "DNT": "1",
         "Sec-GPC": "1",
-        "Authorization": "Basic cm9vdDpkcmFnaW5v",
+        "Authorization": "Basic cm9vdDpkcmFnaW5v",  # Assumes the same credentials for both gateways
         "Connection": "keep-alive",
-        "Referer": "http://10.130.1.1/cgi-bin/log-lora.has",
         "Upgrade-Insecure-Requests": "1"
     }
 
-    response = requests.get(url, headers=headers)
+    for url in gateway_urls:
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                table = soup.find('table')
+                if table:
+                    rows = table.find_all('tr')[1:]  # Skip the header row
+                    
+                    for row in rows:
+                        # Skip hidden rows in this iteration
+                        if row.get('style') == 'display: none;':
+                            continue
+                        
+                        cells = row.find_all('td')
+                        if not cells:
+                            continue
+                        
+                        # Prepare formatted_row from visible cells, skipping the first cell for Chevron icon
+                        formatted_row = ' | '.join(cell.text.strip() for cell in cells[1:])
+                        
+                        # Extract dev_id and freq from the visible row
+                        dev_id = extract_dev_id(formatted_row)
+                        freq = extract_freq(formatted_row)
 
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find('table')
-        rows = table.find_all('tr')
-        headers = [header.text.strip() for header in rows[0].find_all('th')][1:]
+                        # Extract RSSI from the next hidden row
+                        hidden_row = row.find_next_sibling('tr')
+                        if hidden_row and 'display: none;' in hidden_row.get('style', ''):
+                            hidden_data = hidden_row.td.text.strip()
+                            rssi_match = re.search(r'"Rssi":(-?\d+)', hidden_data)
+                            if rssi_match:
+                                rssi = int(rssi_match.group(1))
+                            else:
+                                rssi = None
+                        else:
+                            rssi = None
 
-        for row in rows[1:]:
-            cells = row.find_all('td')
-            cell_data = [cell.text.strip() for cell in cells[1:] if cells.index(cell) < len(headers) + 1]
-            formatted_row = ' | '.join(cell_data)
+                        # Save data into the surveydata structure
+                        if dev_id and freq is not None:
+                            entry_identifier = f"{dev_id}_{freq}_{formatted_row}"
+                            if entry_identifier not in parsed_entries:
+                                parsed_entries.add(entry_identifier)
+                                if dev_id not in surveydata:
+                                    surveydata[dev_id] = []
+                                surveydata[dev_id].append([freq, rssi, formatted_row])
 
-            dev_id = extract_dev_id(formatted_row)  # Your existing function to extract DevEui or DevAddr
-            freq = extract_freq(formatted_row)  # Your existing function to extract frequency
-
-            if dev_id and freq:
-                entry_identifier = f"{dev_id}_{formatted_row}"  # Create a unique identifier for the entry
-                
-                # Only process the entry if we haven't seen this identifier before
-                if entry_identifier not in parsed_entries:
-                    parsed_entries.add(entry_identifier)  # Add the identifier to the set
-
-                    # Initialize dictionary for dev_id if not present
-                    if dev_id not in surveydata:
-                        surveydata[dev_id] = []
-
-                    # Append new data to the list associated with the DevEui or DevAddr
-                    surveydata[dev_id].append([freq, 0, formatted_row])
-
-        print("Data parsed and stored.")
-    else:
-        print(f"Request failed with status code: {response.status_code}")
+                        print(f"Data parsed and stored from {url}.")
+            else:
+                print(f"Request to {url} failed with status code: {response.status_code}")
+        except Exception as e:
+            print(f"An error occurred while processing {url}: {e}")
 
 
     # Schedule the next call to this function
-    Timer(60, parse_and_store_data).start()  # Call this function every 60 seconds
+    Timer(30, parse_and_store_data).start()  # Call this function every 30 seconds
 
 
 def extract_dev_id(formatted_row):
@@ -346,5 +393,5 @@ def get_table_data():
 
 
 if __name__ == '__main__':
-    Timer(60, parse_and_store_data).start()
+    Timer(30, parse_and_store_data).start()
     socketio.run(app, debug=True)
