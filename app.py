@@ -87,7 +87,8 @@ def parse_and_store_data():
     # Include the port number (8000) in your gateway URLs
     gateway_urls = [
         "http://192.168.0.101:8000/cgi-bin/log-traffic.has",  # Gateway 1 (915 MHz)
-        "http://192.168.0.102:8000/cgi-bin/log-traffic.has"   # Gateway 2 (868 MHz)
+        "http://192.168.0.102:8000/cgi-bin/log-traffic.has",  # Gateway 2 (868 MHz)
+        "http://192.168.0.103:8000/cgi-bin/log-traffic.has"   # Gateway 3 (915 MHz)
     ]
 
     headers = {
