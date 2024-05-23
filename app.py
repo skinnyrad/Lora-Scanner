@@ -10,7 +10,15 @@ import re
 import requests
 from bs4 import BeautifulSoup
 import ipaddress
+import pandas as pd
+from llama_index.llms.ollama import Ollama
+from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.experimental.query_engine import PandasQueryEngine
+from llama_index.core import Settings
 
+"""
+Global Variables
+"""
 app = Flask(__name__)
 socketio = SocketIO(app)
 serial_threads = {}
@@ -27,7 +35,16 @@ gateway_ips = {'gateway1': '192.168.0.101',
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
 parsed_entries = set()
+Settings.llm =  Ollama(model="llama3:instruct", request_timeout=120.0)
+ollama_embedding = OllamaEmbedding(
+    model_name="llama3:instruct",
+    base_url="http://localhost:11434",
+    ollama_additional_kwargs={"mirostat": 0},
+)
 
+"""
+Function Definitions
+"""
 def read_serial_data(port, ser, buffer):
     global surveydata
     rssi_pattern = r"RSSI: (-?\d+)"
@@ -82,6 +99,34 @@ def read_serial_data(port, ser, buffer):
             #print("Could not access Serial Port")
             #print(f"Error: {e}")
             pass
+
+# Route to render the query page
+@app.route('/query')
+def query_page():
+    return render_template('query.html')
+
+# Route to handle the query
+@app.route('/query_surveydata', methods=['POST'])
+def query_surveydata():
+    global surveydata
+    query_data = request.get_json()
+    query = query_data.get('query')
+
+    data = []
+    for key, values in surveydata.items():
+        for value in values:
+            data.append([key] + value)
+    surveydata_df = pd.DataFrame(data, columns=["Device", "Frequency", "RSSI", "Decoded Value"])
+
+    if surveydata_df.empty:
+        print(surveydata)
+        return jsonify({"error": "Survey data is not available"}), 400
+    try:
+        query_engine = PandasQueryEngine(df=surveydata_df, verbose=False)
+        response = str(query_engine.query(query))
+        return jsonify({"response": response}) 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/set_gateways', methods=['POST'])
 def set_gateways():

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <script type="text/javascript" src="static/js/socket.io.js"></script>
+    <title>LoRa Scanner</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico" />
+    <!-- Font Awesome icons (free version)-->
+    <script src="static/js/all.js" crossorigin="anonymous"></script>
+    <!-- Google fonts-->
+
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link href="static/css/styles.css" rel="stylesheet" />
+    <!-- Include SweetAlert2 CSS -->
+    <link rel="stylesheet" href="static/css/sweetalert2.css">
+
+    <!-- Include SweetAlert2 JS -->
+    <script src="static/js/sweetalert2.js"></script>
+</head>
+<body id="page-top">
+    <!-- Navigation-->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top" id="sideNav">
+        <a class="navbar-brand js-scroll-trigger" href="#page-top">
+            <span class="d-block d-lg-none">LoRa Scanner AI Companion</span>
+            <span class="d-none d-lg-block"><img class="img-fluid img-profile rounded-circle mx-auto mb-2" src="static/assets/img/profile.jpg" alt="..." /></span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/">Home</a></li>
+                <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/analysis">Analysis Mode</a></li>
+                <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/survey">Survey Mode</a></li>
+                <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/tracking">Tracking Mode</a></li>
+                <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/query">AI Companion</a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Page Content-->
+    <div class="container-fluid p-0">
+
+        <!-- Chat Box Section -->
+        <section class="resume-section" id="chat">
+            <div class="resume-section-content">
+                <h2 class="mb-5">LoRa Scanner AI</h2>
+                <h2 class="lead mb-5">Use AI to Query the Survey Data</h2>
+                <div class="chat-box">
+                    <div id="chat-log" class="chat-log"></div>
+                    <form id="query-form">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="query-input" placeholder="Enter your query..." aria-label="Enter your query" aria-describedby="button-submit">
+                            <button class="btn btn-primary" type="submit" id="button-submit">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+    <!-- Bootstrap core JS-->
+    <script src="static/js/bootstrap.bundle.min.js"></script>
+    <!-- Core theme JS-->
+    <script src="static/js/scripts.js"></script>
+    <!-- jQuery -->
+    <script src="static/js/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#query-form').on('submit', function(e) {
+                e.preventDefault();
+                const query = $('#query-input').val();
+                $('#chat-log').append('<div class="chat-message"><strong>You:</strong> ' + query + '</div>');
+                $.ajax({
+                    url: '/query_surveydata',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ query: query }),
+                    success: function(response) {
+                        $('#chat-log').append('<div class="chat-message"><strong>Response:</strong> ' + '<p>' + JSON.stringify(response.response, null, 2) + '</p>' +'</div>');
+                        $('#query-input').val('');  // Clear the input field
+                    },
+                    error: function(error) {
+                        $('#chat-log').append('<div class="chat-message"><strong>Error:</strong> ' + JSON.stringify(error, null, 2) + '</div>');
+                    }
+                });
+            });
+        });
+    </script>
+    <style>
+        .chat-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .chat-log {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+        }
+    </style>
+</body>
+</html>
