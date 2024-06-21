@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from markupsafe import escape
 from flask_socketio import SocketIO, emit
 import serial
@@ -10,6 +10,8 @@ import re
 import requests
 from bs4 import BeautifulSoup
 import ipaddress
+from io import StringIO, BytesIO
+import csv
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -83,25 +85,21 @@ def read_serial_data(port, ser, buffer):
             #print(f"Error: {e}")
             pass
 
-@app.route('/set_gateways', methods=['POST'])
-def set_gateways():
-    global gateway_ips
-    data = request.form
-    for key in ['gateway1', 'gateway2', 'gateway3']:
-        input_ip = data.get(key, '').strip()
-        if input_ip:  # Proceed only if the input is not empty
-            try:
-                # Validate the IP address
-                ipaddress.ip_address(input_ip)
-                # Update the IP address if valid
-                gateway_ips[key] = input_ip
-            except ValueError:
-                # Return an error if the IP address is invalid
-                return jsonify({"error": f"Invalid IP address provided for {key}"}), 400
+def convert_dict_to_csv(data):
+    output = StringIO()
+    writer = csv.writer(output)
+    
+    # Write the header
+    writer.writerow(['Device', 'Frequency', 'RSSI', 'Decoded Value'])
+    
+    # Write the data
+    for key, values in data.items():
+        for value in values:
+            writer.writerow([key] + value)
+    
+    output.seek(0)
+    return output
 
-    for gateway, ip_address in gateway_ips.items():
-        print(f"Gateway {gateway} has IP address: {ip_address}")
-    return jsonify({"message": "Gateway IPs updated successfully"}), 200
 
 def parse_and_store_data():
     global surveydata
@@ -390,6 +388,37 @@ def get_table_data():
 
     #print(cleaned_data)  # For debugging
     return jsonify(cleaned_data)
+
+
+@app.route('/set_gateways', methods=['POST'])
+def set_gateways():
+    global gateway_ips
+    data = request.form
+    for key in ['gateway1', 'gateway2', 'gateway3']:
+        input_ip = data.get(key, '').strip()
+        if input_ip:  # Proceed only if the input is not empty
+            try:
+                # Validate the IP address
+                ipaddress.ip_address(input_ip)
+                # Update the IP address if valid
+                gateway_ips[key] = input_ip
+            except ValueError:
+                # Return an error if the IP address is invalid
+                return jsonify({"error": f"Invalid IP address provided for {key}"}), 400
+
+    for gateway, ip_address in gateway_ips.items():
+        print(f"Gateway {gateway} has IP address: {ip_address}")
+    return jsonify({"message": "Gateway IPs updated successfully"}), 200
+
+@app.route('/downloadPackets', methods=['GET'])
+def downloadPackets():
+    csv_data = convert_dict_to_csv(surveydata)
+    # Convert StringIO to BytesIO for send_file compatibility
+    bytes_data = BytesIO()
+    bytes_data.write(csv_data.getvalue().encode('utf-8'))
+    bytes_data.seek(0)
+    return send_file(bytes_data, mimetype='text/csv', as_attachment=True, download_name='surveydata.csv')
+
 
 
 if __name__ == '__main__':
