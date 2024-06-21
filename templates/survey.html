@@ -61,13 +61,35 @@
                             <tbody>
                                 <!-- Rows will be inserted here -->
                             </tbody>
-                        </table><br><br>
-                        <div style="text-align:center;">
-                            <button class="transmit-button" onclick="manualUpdateTable()">Refresh Table</button>  
-                        </div>
-                                                                    
+                        </table><br><br>                            
                     </div>
-                    
+                    <div style="text-align:center;">
+                        <button class="transmit-button" onclick="manualUpdateTable()">Refresh Table</button>  
+                        <button class="transmit-button" onclick="downloadPackets()">Download Packets</button>  
+                    </div>
+                    <script>
+                         function downloadPackets() {
+                            fetch('/downloadPackets')
+                                .then(response => {
+                                    if (response.ok) {
+                                        return response.blob();
+                                    }
+                                    throw new Error('Network response was not ok.');
+                                })
+                                .then(blob => {
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = url;
+                                    a.download = 'surveydata.csv';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                })
+                                .catch(error => console.error('There was a problem with the fetch operation:', error));
+                        }
+
+                    </script>
                     <script>
                         let expandedRows = {};
 
