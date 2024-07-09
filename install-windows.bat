@@ -35,5 +35,5 @@ echo Requests==2.31.0 >> requirements.txt
 pip install -r requirements.txt
 
 :: Inform the user that the installation is complete
-echo Installation complete. You can now run your application using: python your_script.py
+echo Installation complete. You can now run your application using: python app.py
 pause
