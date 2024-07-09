@@ -41,4 +41,4 @@ EOT
 pip3 install -r requirements.txt
 
 # Inform the user that the installation is complete
-echo "Installation complete. You can now run your application using: python3 your_script.py"
+echo "Installation complete. You can now run your application using: python3 app.py"
