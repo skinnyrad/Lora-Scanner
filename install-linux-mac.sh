@@ -27,9 +27,18 @@ else
     echo "Skipping Python3 installation."
 fi
 
+# Create a requirements.txt file
+cat <<EOT > requirements.txt
+beautifulsoup4==4.12.3
+Flask==2.3.2
+Flask_SocketIO==5.3.6
+MarkupSafe==2.1.3
+pyserial==3.5
+Requests==2.31.0
+EOT
+
 # Install required Python packages
-pip3 install flask flask-socketio pyserial beautifulsoup4 requests
+pip3 install -r requirements.txt
 
 # Inform the user that the installation is complete
 echo "Installation complete. You can now run your application using: python3 your_script.py"
-
