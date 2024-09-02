@@ -72,60 +72,56 @@
 
         </div>
 
-        <script>
-            document.getElementById('configureGatewayBtn').addEventListener('click', function() {
-                let gatewayIPs = {};
+    <script>
+        document.getElementById('configureGatewayBtn').addEventListener('click', function() {
+            let gatewayIPs = {};
 
-                const ipPrompt = (title) => {
-                    return Swal.fire({
-                        title: title,
-                        input: 'text',
-                        inputPlaceholder: 'Leave empty to keep current IP',
-                        inputValidator: (value) => {
-                            if (value && !value.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
-                                return 'Please enter a valid IP address or leave it empty';
-                            }
+            const ipPrompt = (title) => {
+                return Swal.fire({
+                    title: title,
+                    input: 'text',
+                    inputPlaceholder: 'Leave empty to keep current IP',
+                    inputValidator: (value) => {
+                        if (value && !value.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
+                            return 'Please enter a valid IP address or leave it empty';
                         }
-                    });
-                };
-
-                ipPrompt('Enter Gateway 1 IP Address').then((result) => {
-                    if (result.value) gatewayIPs.gateway1 = result.value;
-
-                    ipPrompt('Enter Gateway 2 IP Address').then((result) => {
-                        if (result.value) gatewayIPs.gateway2 = result.value;
-
-                        ipPrompt('Enter Gateway 3 IP Address').then((result) => {
-                            if (result.value) gatewayIPs.gateway3 = result.value;
-
-                            // Now send the IPs to the server only if they are not undefined
-                            let queryString = Object.keys(gatewayIPs).reduce((acc, key) => {
-                                if (gatewayIPs[key] !== undefined) {
-                                    acc.push(`${key}=${encodeURIComponent(gatewayIPs[key])}`);
-                                }
-                                return acc;
-                            }, []).join('&');
-
-                            if (queryString) {
-                                fetch('/set_gateways', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                    },
-                                    body: queryString
-                                })
-                                .then(response => response.json())
-                                .then(data => Swal.fire('Success', 'Gateway IPs updated successfully', 'success'))
-                                .catch(error => Swal.fire('Error', 'There was an issue updating the Gateway IPs', 'error'));
-                            } else {
-                                Swal.fire('No Changes', 'No IP addresses were changed.', 'info');
-                            }
-                        });
-                    });
+                    }
                 });
-            });
+            };
 
-        </script>
+            const promptGateways = async () => {
+                for (let i = 1; i <= 10; i++) {
+                    const result = await ipPrompt(`Enter Gateway ${i} IP Address`);
+                    if (result.value) gatewayIPs[`gateway${i}`] = result.value;
+                }
+
+                // Now send the IPs to the server only if they are not undefined
+                let queryString = Object.keys(gatewayIPs).reduce((acc, key) => {
+                    if (gatewayIPs[key] !== undefined) {
+                        acc.push(`${key}=${encodeURIComponent(gatewayIPs[key])}`);
+                    }
+                    return acc;
+                }, []).join('&');
+
+                if (queryString) {
+                    fetch('/set_gateways', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: queryString
+                    })
+                    .then(response => response.json())
+                    .then(data => Swal.fire('Success', 'Gateway IPs updated successfully', 'success'))
+                    .catch(error => Swal.fire('Error', 'There was an issue updating the Gateway IPs', 'error'));
+                } else {
+                    Swal.fire('No Changes', 'No IP addresses were changed.', 'info');
+                }
+            };
+
+            promptGateways();
+        });
+    </script>
             
 
 

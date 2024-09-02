@@ -23,12 +23,22 @@ port3_status = True
 global ser1
 global ser2 
 global ser3
-gateway_ips = {'gateway1': '192.168.0.101',
-               'gateway2': '192.168.0.102',
-               'gateway3': '192.168.0.103'}
+gateway_ips = {
+    'gateway1': '',
+    'gateway2': '',
+    'gateway3': '',
+    'gateway4': '',
+    'gateway5': '',
+    'gateway6': '',
+    'gateway7': '',
+    'gateway8': '',
+    'gateway9': '',
+    'gateway10': ''
+}
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
 parsed_entries = set()
+gateways_configured = False
 
 def read_serial_data(port, ser, buffer):
     global surveydata
@@ -105,11 +115,10 @@ def parse_and_store_data():
     global surveydata
     global parsed_entries
     global gateway_ips
+    global gateways_configured
     # Include the port number (8000) in your gateway URLs
     gateway_urls = [
-        f"http://{gateway_ips['gateway1']}:8000/cgi-bin/log-traffic.has",  # Gateway 1
-        f"http://{gateway_ips['gateway2']}:8000/cgi-bin/log-traffic.has",  # Gateway 2
-        f"http://{gateway_ips['gateway3']}:8000/cgi-bin/log-traffic.has"   # Gateway 3
+        f"http://{gateway_ips[f'gateway{i}']}:8000/cgi-bin/log-traffic.has" for i in range(1, 11) if gateway_ips[f'gateway{i}']
     ]
 
     headers = {
@@ -123,62 +132,60 @@ def parse_and_store_data():
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1"
     }
+    if gateways_configured:
+        for url in gateway_urls:
+            try:
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    table = soup.find('table')
+                    if table:
+                        rows = table.find_all('tr')[1:]  # Skip the header row
+                        
+                        for row in rows:
+                            # Skip hidden rows in this iteration
+                            if row.get('style') == 'display: none;':
+                                continue
+                            
+                            cells = row.find_all('td')
+                            if not cells:
+                                continue
+                            
+                            # Prepare formatted_row from visible cells, skipping the first cell for Chevron icon
+                            formatted_row = ' | '.join(cell.text.strip() for cell in cells[1:])
+                            
+                            # Extract dev_id and freq from the visible row
+                            dev_id = extract_dev_id(formatted_row)
+                            freq = extract_freq(formatted_row)
 
-    for url in gateway_urls:
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, 'html.parser')
-                table = soup.find('table')
-                if table:
-                    rows = table.find_all('tr')[1:]  # Skip the header row
-                    
-                    for row in rows:
-                        # Skip hidden rows in this iteration
-                        if row.get('style') == 'display: none;':
-                            continue
-                        
-                        cells = row.find_all('td')
-                        if not cells:
-                            continue
-                        
-                        # Prepare formatted_row from visible cells, skipping the first cell for Chevron icon
-                        formatted_row = ' | '.join(cell.text.strip() for cell in cells[1:])
-                        
-                        # Extract dev_id and freq from the visible row
-                        dev_id = extract_dev_id(formatted_row)
-                        freq = extract_freq(formatted_row)
-
-                        # Extract RSSI from the next hidden row
-                        hidden_row = row.find_next_sibling('tr')
-                        if hidden_row and 'display: none;' in hidden_row.get('style', ''):
-                            hidden_data = hidden_row.td.text.strip()
-                            rssi_match = re.search(r'"Rssi":(-?\d+)', hidden_data)
-                            if rssi_match:
-                                rssi = int(rssi_match.group(1))
+                            # Extract RSSI from the next hidden row
+                            hidden_row = row.find_next_sibling('tr')
+                            if hidden_row and 'display: none;' in hidden_row.get('style', ''):
+                                hidden_data = hidden_row.td.text.strip()
+                                rssi_match = re.search(r'"Rssi":(-?\d+)', hidden_data)
+                                if rssi_match:
+                                    rssi = int(rssi_match.group(1))
+                                else:
+                                    rssi = None
                             else:
                                 rssi = None
-                        else:
-                            rssi = None
 
-                        # Save data into the surveydata structure
-                        if dev_id and freq is not None:
-                            entry_identifier = f"{dev_id}_{freq}_{formatted_row}"
-                            if entry_identifier not in parsed_entries:
-                                parsed_entries.add(entry_identifier)
-                                if dev_id not in surveydata:
-                                    surveydata[dev_id] = []
-                                surveydata[dev_id].append([freq, rssi, formatted_row])
+                            # Save data into the surveydata structure
+                            if dev_id and freq is not None:
+                                entry_identifier = f"{dev_id}_{freq}_{formatted_row}"
+                                if entry_identifier not in parsed_entries:
+                                    parsed_entries.add(entry_identifier)
+                                    if dev_id not in surveydata:
+                                        surveydata[dev_id] = []
+                                    surveydata[dev_id].append([freq, rssi, formatted_row])
 
-                        print(f"Data parsed and stored from {url}.")
-            else:
-                print(f"Request to {url} failed with status code: {response.status_code}")
-        except Exception as e:
-            print(f"An error occurred while processing {url}: {e}")
-
-
-    # Schedule the next call to this function
-    Timer(30, parse_and_store_data).start()  # Call this function every 30 seconds
+                            print(f"Data parsed and stored from {url}.")
+                else:
+                    print(f"Request to {url} failed with status code: {response.status_code}")
+            except Exception as e:
+                print(f"An error occurred while processing {url}: {e}")
+        # Schedule the next call to this function
+        Timer(30, parse_and_store_data).start()  # Call this function every 30 seconds
 
 
 def extract_dev_id(formatted_row):
@@ -393,8 +400,9 @@ def get_table_data():
 @app.route('/set_gateways', methods=['POST'])
 def set_gateways():
     global gateway_ips
+    global gateways_configured  # Add this line
     data = request.form
-    for key in ['gateway1', 'gateway2', 'gateway3']:
+    for key in [f'gateway{i}' for i in range(1, 11)]:
         input_ip = data.get(key, '').strip()
         if input_ip:  # Proceed only if the input is not empty
             try:
@@ -408,7 +416,10 @@ def set_gateways():
 
     for gateway, ip_address in gateway_ips.items():
         print(f"Gateway {gateway} has IP address: {ip_address}")
+
+    gateways_configured = True  # Set the flag to True after configuring gateways
     return jsonify({"message": "Gateway IPs updated successfully"}), 200
+
 
 @app.route('/downloadPackets', methods=['GET'])
 def downloadPackets():
