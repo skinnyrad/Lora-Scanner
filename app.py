@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 import ipaddress
 from io import StringIO, BytesIO
 import csv
+import serial.tools.list_ports
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -342,6 +343,11 @@ def transmit433():
     msg = "TX:"+user_input+" "
     ser1.write(msg.encode())
     return jsonify(result="Ok")
+
+@app.route('/get_serial_ports')
+def get_serial_ports():
+    ports = [port.device for port in serial.tools.list_ports.comports()]
+    return jsonify(ports=ports)
 
 @app.route('/transmit868', methods=['POST'])
 def transmit868():
