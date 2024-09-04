@@ -145,7 +145,7 @@ def parse_and_store_data():
         try:
             print(f"Fetching data from {url}")
             response = requests.get(url, headers=headers, timeout=10)
-            print(f"Status code: {response.status_code}")
+
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 table = soup.find('table')
