@@ -33,6 +33,7 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/#config">Configuration</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/analysis">Analysis Mode</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="/survey">Survey Mode</a></li>
                     <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#">Tracking Mode</a></li>
@@ -209,8 +210,8 @@
                             </div>
                             
                             <div style="text-align:center;">
-                                <button class="styled-button" onclick="promptUser433()">Connect Serial Port</button>
-                                <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Serial Port</button>
+                                <button class="styled-button" onclick="promptUser433()">Select Device</button>
+                                <button class="disconnect-button" onclick="deleteSerial433()">Disconnect Device</button>
                                 <button class="transmit-button" onclick="transmit433()">Start Beacon</button>
                                 <button class="disconnect-button" onclick="confirmStopTransmission433()">Stop Beacon</button><br><br>
                                 <button class="transmit-button" onclick="clearDataPort1()">Clear Data</button>
@@ -282,34 +283,43 @@
 
                                 <script>
                                     function promptUser433() {
-                                        Swal.fire({
-                                            title: 'Serial Port:',
-                                            input: 'text',
-                                            inputAttributes: {
-                                                autocapitalize: 'off'
-                                            },
-                                            showCancelButton: true,
-                                            confirmButtonText: 'Submit',
-                                            cancelButtonText: 'Cancel',
-                                            showLoaderOnConfirm: true,
-                                            preConfirm: (value) => {
-                                                // Make an AJAX request to Flask
-                                                fetch(`/attach_serial_433?user_input=${encodeURIComponent(value)}`)
-                                                    .then(response => response.json())
-                                                    .then(data => {
-                                                        Swal.fire({
-                                                            title: 'Result',
-                                                            text: data.result,
-                                                            icon: 'info'
-                                                        });
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('Error:', error);
-                                                        Swal.fire('Oops!', 'Something went wrong.', 'error');
-                                                    });
-                                            },
-                                            allowOutsideClick: () => !Swal.isLoading()
-                                        });
+                                        // First, fetch the list of available ports
+                                        fetch('/get_serial_ports')
+                                            .then(response => response.json())
+                                            .then(data => {
+                                                const ports = data.ports;
+                                                
+                                                // Create the select options
+                                                const selectOptions = ports.map(port => `<option value="${port}">${port}</option>`).join('');
+
+                                                Swal.fire({
+                                                    title: 'Select Serial Port:',
+                                                    html: `<select id="port-select" class="swal2-input">${selectOptions}</select>`,
+                                                    showCancelButton: true,
+                                                    confirmButtonText: 'Connect',
+                                                    cancelButtonText: 'Cancel',
+                                                    preConfirm: () => {
+                                                        const selectedPort = document.getElementById('port-select').value;
+                                                        return fetch(`/attach_serial_433?user_input=${encodeURIComponent(selectedPort)}`)
+                                                            .then(response => response.json())
+                                                            .then(data => {
+                                                                Swal.fire({
+                                                                    title: 'Result',
+                                                                    text: data.result,
+                                                                    icon: 'info'
+                                                                });
+                                                            })
+                                                            .catch(error => {
+                                                                console.error('Error:', error);
+                                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                                            });
+                                                    }
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.error('Error fetching ports:', error);
+                                                Swal.fire('Oops!', 'Failed to fetch available ports.', 'error');
+                                            });
                                     }
                                 </script>
 
@@ -457,8 +467,8 @@
                             <div class="serial-data" id="serial-data-port2">
                             </div>
                             <div style="text-align:center;">
-                                <button class="styled-button" onclick="promptUser868()">Connect Serial Port</button>
-                                <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Serial Port</button>
+                                <button class="styled-button" onclick="promptUser868()">Select Device</button>
+                                <button class="disconnect-button" onclick="deleteSerial868()">Disconnect Device</button>
                                 <button class="transmit-button" onclick="transmit868()">Start Beacon</button>
                                 <button class="disconnect-button" onclick="confirmStopTransmission868()">Stop Beacon</button><br><br>
                                 <button class="transmit-button" onclick="clearDataPort2()">Clear Data</button>
@@ -527,34 +537,43 @@
 
                         <script>
                             function promptUser868() {
-                                Swal.fire({
-                                    title: 'Serial Port:',
-                                    input: 'text',
-                                    inputAttributes: {
-                                        autocapitalize: 'off'
-                                    },
-                                    showCancelButton: true,
-                                    confirmButtonText: 'Submit',
-                                    cancelButtonText: 'Cancel',
-                                    showLoaderOnConfirm: true,
-                                    preConfirm: (value) => {
-                                        // Make an AJAX request to Flask
-                                        fetch(`/attach_serial_868?user_input=${encodeURIComponent(value)}`)
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                Swal.fire({
-                                                    title: 'Result',
-                                                    text: data.result,
-                                                    icon: 'info'
-                                                });
-                                            })
-                                            .catch(error => {
-                                                console.error('Error:', error);
-                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
-                                            });
-                                    },
-                                    allowOutsideClick: () => !Swal.isLoading()
-                                });
+                                // First, fetch the list of available ports
+                                fetch('/get_serial_ports')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        const ports = data.ports;
+                                        
+                                        // Create the select options
+                                        const selectOptions = ports.map(port => `<option value="${port}">${port}</option>`).join('');
+
+                                        Swal.fire({
+                                            title: 'Select Serial Port:',
+                                            html: `<select id="port-select" class="swal2-input">${selectOptions}</select>`,
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Connect',
+                                            cancelButtonText: 'Cancel',
+                                            preConfirm: () => {
+                                                const selectedPort = document.getElementById('port-select').value;
+                                                return fetch(`/attach_serial_868?user_input=${encodeURIComponent(selectedPort)}`)
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        Swal.fire({
+                                                            title: 'Result',
+                                                            text: data.result,
+                                                            icon: 'info'
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                        Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                                    });
+                                            }
+                                        });
+                                    })
+                                    .catch(error => {
+                                        console.error('Error fetching ports:', error);
+                                        Swal.fire('Oops!', 'Failed to fetch available ports.', 'error');
+                                    });
                             }
                         </script>
 
@@ -704,8 +723,8 @@
                             <div class="serial-data" id="serial-data-port3">
                             </div>
                             <div style="text-align:center;">
-                                <button class="styled-button" onclick="promptUser915()">Connect Serial Port</button>
-                                <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Serial Port</button>
+                                <button class="styled-button" onclick="promptUser915()">Select Device</button>
+                                <button class="disconnect-button" onclick="deleteSerial915()">Disconnect Device</button>
                                 <button class="transmit-button" onclick="transmit915()">Start Beacon</button>
                                 <button class="disconnect-button" onclick="confirmStopTransmission915()">Stop Beacon</button><br><br>
                                 <button class="transmit-button" onclick="clearDataPort3()">Clear Data</button>
@@ -775,34 +794,43 @@
 
                         <script>
                             function promptUser915() {
-                                Swal.fire({
-                                    title: 'Serial Port:',
-                                    input: 'text',
-                                    inputAttributes: {
-                                        autocapitalize: 'off'
-                                    },
-                                    showCancelButton: true,
-                                    confirmButtonText: 'Submit',
-                                    cancelButtonText: 'Cancel',
-                                    showLoaderOnConfirm: true,
-                                    preConfirm: (value) => {
-                                        // Make an AJAX request to Flask
-                                        fetch(`/attach_serial_915?user_input=${encodeURIComponent(value)}`)
-                                            .then(response => response.json())
-                                            .then(data => {
-                                                Swal.fire({
-                                                    title: 'Result',
-                                                    text: data.result,
-                                                    icon: 'info'
-                                                });
-                                            })
-                                            .catch(error => {
-                                                console.error('Error:', error);
-                                                Swal.fire('Oops!', 'Something went wrong.', 'error');
-                                            });
-                                    },
-                                    allowOutsideClick: () => !Swal.isLoading()
-                                });
+                                // First, fetch the list of available ports
+                                fetch('/get_serial_ports')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        const ports = data.ports;
+                                        
+                                        // Create the select options
+                                        const selectOptions = ports.map(port => `<option value="${port}">${port}</option>`).join('');
+
+                                        Swal.fire({
+                                            title: 'Select Serial Port:',
+                                            html: `<select id="port-select" class="swal2-input">${selectOptions}</select>`,
+                                            showCancelButton: true,
+                                            confirmButtonText: 'Connect',
+                                            cancelButtonText: 'Cancel',
+                                            preConfirm: () => {
+                                                const selectedPort = document.getElementById('port-select').value;
+                                                return fetch(`/attach_serial_915?user_input=${encodeURIComponent(selectedPort)}`)
+                                                    .then(response => response.json())
+                                                    .then(data => {
+                                                        Swal.fire({
+                                                            title: 'Result',
+                                                            text: data.result,
+                                                            icon: 'info'
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error:', error);
+                                                        Swal.fire('Oops!', 'Something went wrong.', 'error');
+                                                    });
+                                            }
+                                        });
+                                    })
+                                    .catch(error => {
+                                        console.error('Error fetching ports:', error);
+                                        Swal.fire('Oops!', 'Failed to fetch available ports.', 'error');
+                                    });
                             }
                         </script>
 

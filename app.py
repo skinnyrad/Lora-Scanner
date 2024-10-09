@@ -12,6 +12,8 @@ from bs4 import BeautifulSoup
 import ipaddress
 from io import StringIO, BytesIO
 import csv
+import serial.tools.list_ports
+from ipaddress import ip_address, AddressValueError
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -23,9 +25,18 @@ port3_status = True
 global ser1
 global ser2 
 global ser3
-gateway_ips = {'gateway1': '192.168.0.101',
-               'gateway2': '192.168.0.102',
-               'gateway3': '192.168.0.103'}
+gateway_ips = {
+    'gateway1': '',
+    'gateway2': '',
+    'gateway3': '',
+    'gateway4': '',
+    'gateway5': '',
+    'gateway6': '',
+    'gateway7': '',
+    'gateway8': '',
+    'gateway9': '',
+    'gateway10': ''
+}
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
 parsed_entries = set()
@@ -100,6 +111,12 @@ def convert_dict_to_csv(data):
     output.seek(0)
     return output
 
+def is_valid_ip(ip):
+    try:
+        ip_address(ip)
+        return True
+    except AddressValueError:
+        return False 
 
 def parse_and_store_data():
     global surveydata
@@ -107,9 +124,9 @@ def parse_and_store_data():
     global gateway_ips
     # Include the port number (8000) in your gateway URLs
     gateway_urls = [
-        f"http://{gateway_ips['gateway1']}:8000/cgi-bin/log-traffic.has",  # Gateway 1
-        f"http://{gateway_ips['gateway2']}:8000/cgi-bin/log-traffic.has",  # Gateway 2
-        f"http://{gateway_ips['gateway3']}:8000/cgi-bin/log-traffic.has"   # Gateway 3
+        f"http://{gateway_ips[f'gateway{i}']}:8000/cgi-bin/log-traffic.has" 
+        for i in range(1, 11) 
+        if gateway_ips[f'gateway{i}'] and is_valid_ip(gateway_ips[f'gateway{i}'])
     ]
 
     headers = {
@@ -126,7 +143,9 @@ def parse_and_store_data():
 
     for url in gateway_urls:
         try:
+            print(f"Fetching data from {url}")
             response = requests.get(url, headers=headers, timeout=10)
+
             if response.status_code == 200:
                 soup = BeautifulSoup(response.text, 'html.parser')
                 table = soup.find('table')
@@ -175,10 +194,9 @@ def parse_and_store_data():
                 print(f"Request to {url} failed with status code: {response.status_code}")
         except Exception as e:
             print(f"An error occurred while processing {url}: {e}")
-
-
     # Schedule the next call to this function
     Timer(30, parse_and_store_data).start()  # Call this function every 30 seconds
+
 
 
 def extract_dev_id(formatted_row):
@@ -336,6 +354,11 @@ def transmit433():
     ser1.write(msg.encode())
     return jsonify(result="Ok")
 
+@app.route('/get_serial_ports')
+def get_serial_ports():
+    ports = [port.device for port in serial.tools.list_ports.comports()]
+    return jsonify(ports=ports)
+
 @app.route('/transmit868', methods=['POST'])
 def transmit868():
     global ser2 
@@ -394,21 +417,20 @@ def get_table_data():
 def set_gateways():
     global gateway_ips
     data = request.form
-    for key in ['gateway1', 'gateway2', 'gateway3']:
+    for key in [f'gateway{i}' for i in range(1, 11)]:
         input_ip = data.get(key, '').strip()
-        if input_ip:  # Proceed only if the input is not empty
+        if input_ip:
             try:
-                # Validate the IP address
                 ipaddress.ip_address(input_ip)
-                # Update the IP address if valid
                 gateway_ips[key] = input_ip
             except ValueError:
-                # Return an error if the IP address is invalid
                 return jsonify({"error": f"Invalid IP address provided for {key}"}), 400
 
     for gateway, ip_address in gateway_ips.items():
         print(f"Gateway {gateway} has IP address: {ip_address}")
+
     return jsonify({"message": "Gateway IPs updated successfully"}), 200
+
 
 @app.route('/downloadPackets', methods=['GET'])
 def downloadPackets():
