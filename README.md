@@ -81,13 +81,11 @@ The 'Configure LoRaWAN Gateway' section allows you to set up to ten Dragino LPS8
 
 ## Analysis Mode
 
-Analyze LoRa traffic received at 433, 868, or 915 MHz with ‘Analysis Mode’. Click the desired frequency to get started. Once you are on the appropriate page, click the 'Connect Serial Port' button to connect to a serial port on your computer (the one your Feather is attached to). Once connected to your LoRa receiver, traffic will automatically be streamed to the web page for analysis. To disconnect a receiver, click the 'Disconnect Serial Port' button.
+Analyze LoRa traffic received at 433, 868, or 915 MHz with ‘Analysis Mode’. Click the desired frequency to get started.  Once connected to your LoRa receiver, traffic will automatically be streamed to the web page for analysis. To disconnect a receiver, click the 'Disconnect Serial Port' button.
 
 ![analysis-mode](./doc/img/analysis-mode.png)
 
 ![connect-main](./doc/img/connect-main.png)
-
-![connect-port](./doc/img/specify-port.png)
 
 You can view and inspect any received packets from the analysis window in the appropriate section:
 
