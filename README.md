@@ -58,6 +58,27 @@ python app.py
 ![scanner-main](./doc/img/lora-main.png)
 
 
+## Configuration
+
+![config](./doc/img/config.png)
+
+From the configuration page, you can connect to a LoRa transmitter to start sending and receiving messages. Select the desired frequency to begin. Click the 'Select Device' button to connect to a serial port on your computer (where your Feather is attached). Once connected, traffic from your LoRa receiver will automatically stream to the web page for analysis. To disconnect a receiver, click the 'Disconnect Device' button. You can connect up to three LoRa transmitters at once.
+
+![config](./doc/img/select-device.png)
+
+
+#### Configure LoRaWAN Gateways
+
+The 'Configure LoRaWAN Gateway' section allows you to set up to ten Dragino LPS8N LoRaWAN gateways.
+
+- Click the "Configure Gateway" button to start configuring each gateway's IP address.
+- Skip configuring a gateway or disconnect an existing one by leaving the input field empty.
+- All entered IP addresses are validated for correct formatting.
+- Once configured, the application automatically retrieves and stores LoRaWAN traffic from each active gateway.
+- Access and analyze stored traffic in 'survey mode'.
+
+![gateways](./doc/img/gateways.png)
+
 ## Analysis Mode
 
 Analyze LoRa traffic received at 433, 868, or 915 MHz with ‘Analysis Mode’. Click the desired frequency to get started. Once you are on the appropriate page, click the 'Connect Serial Port' button to connect to a serial port on your computer (the one your Feather is attached to). Once connected to your LoRa receiver, traffic will automatically be streamed to the web page for analysis. To disconnect a receiver, click the 'Disconnect Serial Port' button.
@@ -106,10 +127,3 @@ To download all packets captured by the LoRa Scanner, click the ‘Download Pack
 
 ![export-packets](./doc/img/download-packets.png)
 
-## LoRaWAN
-
-To capture LoRaWAN traffic, you have to connect to an active Dragino LPS8N Indoor LoRaWAN gateway (915 or 868 MHz).  You can connect to your gateway from the main screen by entering in the IP address of the gateway.  Currently the application allows you to simultaneously connect to three gateways at once.
-
-![gateway](./doc/img/lorawan-gateway.png)
-
-![gateway-config](./doc/img/lorawan-gateway-configure.png)
