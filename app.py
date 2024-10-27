@@ -40,6 +40,7 @@ gateway_ips = {
 frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, None)
 surveydata = {}
 parsed_entries = set()
+used_ports = set()
 
 def read_serial_data(port, ser, buffer):
     """
@@ -303,6 +304,11 @@ def connect_serial(port, frequency):
     global ser1
     global ser2 
     global ser3
+    global used_ports
+
+    # Check if the port is already in use
+    if port in used_ports:
+        raise Exception(f"Port {port} is already in use for another frequency.")
 
     if frequency == 433:
         try:
@@ -311,6 +317,7 @@ def connect_serial(port, frequency):
             serial_threads['port1'] = threading.Thread(target=read_serial_data, args=('port1', ser1, serial_buffers['port1']))
             serial_threads['port1'].daemon = True
             serial_threads['port1'].start()
+            used_ports.add(port)  # Mark the port as used
         except:
             print("\n\nPort for 433 MHz not available\n\n")
     if frequency == 868:
@@ -320,6 +327,7 @@ def connect_serial(port, frequency):
             serial_threads['port2'] = threading.Thread(target=read_serial_data, args=('port2', ser2, serial_buffers['port2']))
             serial_threads['port2'].daemon = True
             serial_threads['port2'].start()
+            used_ports.add(port)  # Mark the port as used
         except:
             print("\n\nPort for 868 MHz not available\n\n")
     if frequency == 915:
@@ -329,7 +337,7 @@ def connect_serial(port, frequency):
             serial_threads['port3'] = threading.Thread(target=read_serial_data, args=('port3', ser3, serial_buffers['port3']))
             serial_threads['port3'].daemon = True
             serial_threads['port3'].start()
-
+            used_ports.add(port)  # Mark the port as used
         except:
             print('\n\nPort for 915 MHz not available\n\n')
 
@@ -347,6 +355,7 @@ def disconnect_serial(port):
     global ser1
     global ser2 
     global ser3
+    global used_ports
     try:
         serial_threads[port].stop()
         del serial_threads[port]
@@ -355,12 +364,15 @@ def disconnect_serial(port):
         pass
     if port == "port1":
         ser1.close()
+        used_ports.remove(ser1.port)  # Remove the port from the used set
     elif port == "port2":
         ser2.close()
+        used_ports.remove(ser2.port)  # Remove the port from the used set
     elif port == "port3":
         ser3.close()
+        used_ports.remove(ser3.port)  # Remove the port from the used set
     else:
-        print("Unkown port, something went wrong...")
+        print("Unknown port, something went wrong...")
     
 
 @app.route('/')
@@ -432,8 +444,14 @@ def attach_serial_433():
     Returns:
     Response: A JSON response indicating the result of the operation.
     """
+    try:
+        # Disconnect any existing connection for 433 MHz
+        disconnect_serial("port1")
+        print("Current port for 433 MHz disconnected")
+    except:
+        pass
+    
     user_input = escape(request.args.get('user_input'))
-    port1_status = True
     connect_serial(str(user_input), 433)
     result = f'Serial Port Requested for 433 MHz'
     return jsonify(result=result)
@@ -467,8 +485,14 @@ def attach_serial_868():
     Returns:
     Response: A JSON response indicating the result of the operation.
     """
+    try:
+        # Disconnect any existing connection for 868 MHz
+        disconnect_serial("port2")
+        print("Current port for 868 MHz disconnected")
+    except:
+        pass
+    
     user_input = escape(request.args.get('user_input'))
-    port2_status = True
     connect_serial(str(user_input), 868)
     result = f'Serial Port Requested for 868 MHz'
     return jsonify(result=result)
@@ -502,6 +526,13 @@ def attach_serial_915():
     Returns:
     Response: A JSON response indicating the result of the operation.
     """
+    try:
+    # Disconnect any existing connection for 915 MHz
+        disconnect_serial("port3")
+        print("Current port for 915 MHz disconnected")
+    except:
+        pass
+    
     user_input = escape(request.args.get('user_input'))
     connect_serial(str(user_input), 915)
     result = f'Serial Port Requested for 915 MHz'
