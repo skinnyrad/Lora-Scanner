@@ -742,6 +742,10 @@ def set_gateways():
     return jsonify({"message": "Gateway IPs updated successfully"}), 200
 
 
+@app.route('/get_gateways', methods=['GET'])
+def get_gateways():
+    return jsonify(gateway_ips)
+
 @app.route('/downloadPackets', methods=['GET'])
 def downloadPackets():
     """
