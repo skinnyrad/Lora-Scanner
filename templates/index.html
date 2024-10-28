@@ -682,189 +682,192 @@
                     <br>
                     <br>
 
-                    <section class="config-section">
-                        <h4>Configure LoRaWAN Gateways</h4>
-                        <div class="description">
-                            <p>
-                                The <strong>Configure LoRaWAN Gateway</strong> section allows you to set up to ten Dragino LPS8N LoRaWAN gateways.
-                            </p>
-                            <ul>
-                                <li>Enter the IP address for each gateway you want to configure.</li>
-                                <li>Leave the input field empty to keep the current IP or disconnect an existing one.</li>
-                                <li>All entered IP addresses are validated for correct formatting.</li>
-                                <li>Once configured, the application automatically retrieves and stores LoRaWAN traffic from each active gateway.</li>
-                                <li>Access and analyze stored traffic in 'survey mode'.</li>
-                            </ul>
-                            <p class="note"><em>Empty values will be ignored, and the Gateway IP address will remain unchanged</em></p>
-                        </div>
-                        <form id="gatewayForm" class="mt-3">
-                            <div id="gatewayInputs"></div>
-                            <button type="button" class="btn btn-primary mt-3" onclick="submitGatewayForm()">Update Gateways</button>
-                        </form>
-                    </section>
-                    
-                    <style>
-                    .gateway-container {
-                        position: relative;
+                <section class="config-section">
+                    <h4>Configure LoRaWAN Gateways</h4>
+                    <div class="description">
+                        <p>
+                            The <strong>Configure LoRaWAN Gateway</strong> section allows you to set up to ten Dragino LPS8N LoRaWAN gateways.
+                        </p>
+                        <ul>
+                            <li>Enter the IP address for each gateway you want to configure.</li>
+                            <li>Leave the input field empty to keep the current IP or disconnect an existing one.</li>
+                            <li>All entered IP addresses are validated for correct formatting.</li>
+                            <li>Once configured, the application automatically retrieves and stores LoRaWAN traffic from each active gateway.</li>
+                            <li>Access and analyze stored traffic in 'survey mode'.</li>
+                        </ul>
+                        <p class="note"><em>Empty values will be ignored, and the Gateway IP address will remain unchanged</em></p>
+                    </div>
+                    <form id="gatewayForm" class="mt-3">
+                        <div id="gatewayInputs"></div>
+                        <button type="button" class="btn btn-primary mt-3" onclick="submitGatewayForm()">Update Gateways</button>
+                    </form>
+                </section>
+
+                <style>
+                .gateway-container {
+                    position: relative;
+                }
+
+                .status-indicator {
+                    transition: background-color 0.3s ease;
+                    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+                }
+
+                .status-indicator[title] {
+                    cursor: pointer;
+                }
+
+                .note {
+                    font-style: italic;
+                    color: #666;
+                    margin-top: 1rem;
+                }
+
+                .config-section {
+                    padding: 20px;
+                    background-color: #f8f9fa;
+                    border-radius: 5px;
+                    margin-bottom: 20px;
+                }
+
+                .form-control {
+                    margin-bottom: 0 !important;
+                }
+                </style>
+
+                <script>
+                class GatewayManager {
+                    constructor() {
+                        this.gatewayIPs = Object.fromEntries(
+                            Array.from({length: 10}, (_, i) => [`gateway${i + 1}`, ''])
+                        );
+                        this.init();
                     }
-                    
-                    .status-indicator {
-                        transition: background-color 0.3s ease;
-                        box-shadow: 0 0 5px rgba(0,0,0,0.2);
-                    }
-                    
-                    .status-indicator[title] {
-                        cursor: pointer;
-                    }
-                    
-                    .note {
-                        font-style: italic;
-                        color: #666;
-                        margin-top: 1rem;
-                    }
-                    
-                    .config-section {
-                        padding: 20px;
-                        background-color: #f8f9fa;
-                        border-radius: 5px;
-                        margin-bottom: 20px;
-                    }
-                    
-                    .form-control {
-                        margin-bottom: 0 !important;
-                    }
-                    </style>
-                    
-                    <script>
-                    class GatewayManager {
-                        constructor() {
-                            this.gatewayIPs = Object.fromEntries(
-                                Array.from({length: 10}, (_, i) => [`gateway${i + 1}`, ''])
-                            );
-                            this.init();
-                        }
-                    
-                        createGatewayInputs() {
-                            const container = document.getElementById('gatewayInputs');
-                            container.innerHTML = Object.keys(this.gatewayIPs)
-                                .map((key, index) => `
-                                    <div class="gateway-container d-flex align-items-center mb-2">
-                                        <input type="text"
-                                               id="${key}"
-                                               class="form-control"
-                                               placeholder="Gateway ${index + 1} IP Address"
-                                               value="${this.gatewayIPs[key]}">
-                                        <div id="${key}-status" class="status-indicator ml-2"
-                                             style="width: 12px; height: 12px; border-radius: 50%; margin-left: 10px;">
-                                        </div>
+
+                    createGatewayInputs() {
+                        const container = document.getElementById('gatewayInputs');
+                        container.innerHTML = Array.from({length: 10}, (_, i) => {
+                            const key = `gateway${i + 1}`;
+                            return `
+                                <div class="gateway-container d-flex align-items-center mb-2">
+                                    <input type="text"
+                                        id="${key}"
+                                        class="form-control"
+                                        placeholder="Gateway ${i + 1} IP Address"
+                                        value="${this.gatewayIPs[key]}">
+                                    <div id="${key}-status" class="status-indicator ml-2"
+                                        style="width: 12px; height: 12px; border-radius: 50%; margin-left: 10px;">
                                     </div>
-                                `).join('');
-                        }
-                    
-                        async checkGatewayStatus(gatewayIP) {
-                            if (!gatewayIP) return false;
-                            
-                            try {
-                                const response = await fetch(`http://${gatewayIP}:8000/cgi-bin/log-traffic.has`, {
-                                    method: 'HEAD',
-                                    mode: 'no-cors',
-                                    timeout: 5000
-                                });
-                                return true;
-                            } catch (error) {
-                                return false;
-                            }
-                        }
-                    
-                        updateStatusIndicator(gatewayKey, isOnline) {
-                            const statusElement = document.getElementById(`${gatewayKey}-status`);
-                            if (statusElement) {
-                                statusElement.style.backgroundColor = isOnline ? '#4BD28F' : '#FF4D4D';
-                                statusElement.title = isOnline ? 'Gateway Online' : 'Gateway Offline';
-                            }
-                        }
-                    
-                        async checkAllGateways() {
-                            for (const [key, ip] of Object.entries(this.gatewayIPs)) {
-                                if (ip) {
-                                    const isOnline = await this.checkGatewayStatus(ip);
-                                    this.updateStatusIndicator(key, isOnline);
-                                } else {
-                                    this.updateStatusIndicator(key, false);
-                                }
-                            }
-                        }
-                    
-                        validateIPAddress(ip) {
-                            if (!ip) return true;
-                            const regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
-                            if (!regex.test(ip)) return false;
-                            
-                            return ip.split('.').every(octet => {
-                                const num = parseInt(octet);
-                                return num >= 0 && num <= 255;
+                                </div>
+                            `;
+                        }).join('');
+                    }
+
+
+                    async checkGatewayStatus(gatewayIP) {
+                        if (!gatewayIP) return false;
+                        
+                        try {
+                            const response = await fetch(`http://${gatewayIP}:8000/cgi-bin/log-traffic.has`, {
+                                method: 'HEAD',
+                                mode: 'no-cors',
+                                timeout: 5000
                             });
+                            return true;
+                        } catch (error) {
+                            return false;
                         }
-                    
-                        async submitGatewayForm() {
-                            const updatedIPs = {};
-                            let hasValidationError = false;
-                    
-                            Object.keys(this.gatewayIPs).forEach(key => {
-                                const input = document.getElementById(key);
-                                const value = input.value.trim();
-                    
-                                if (value && !this.validateIPAddress(value)) {
-                                    hasValidationError = true;
-                                    input.classList.add('is-invalid');
-                                    Swal.fire('Error', `Invalid IP address for ${key}`, 'error');
-                                    return;
-                                }
-                                
-                                if (value) {
-                                    updatedIPs[key] = value;
-                                    input.classList.remove('is-invalid');
-                                }
-                            });
-                    
-                            if (hasValidationError) return;
-                    
-                            if (Object.keys(updatedIPs).length === 0) {
-                                Swal.fire('No Changes', 'No IP addresses were changed.', 'info');
+                    }
+
+                    updateStatusIndicator(gatewayKey, isOnline) {
+                        const statusElement = document.getElementById(`${gatewayKey}-status`);
+                        if (statusElement) {
+                            statusElement.style.backgroundColor = isOnline ? '#4BD28F' : '#FF4D4D';
+                            statusElement.title = isOnline ? 'Gateway Online' : 'Gateway Offline';
+                        }
+                    }
+
+                    async checkAllGateways() {
+                        for (const [key, ip] of Object.entries(this.gatewayIPs)) {
+                            if (ip) {
+                                const isOnline = await this.checkGatewayStatus(ip);
+                                this.updateStatusIndicator(key, isOnline);
+                            } else {
+                                this.updateStatusIndicator(key, false);
+                            }
+                        }
+                    }
+
+                    validateIPAddress(ip) {
+                        if (!ip) return true;
+                        const regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+                        if (!regex.test(ip)) return false;
+                        
+                        return ip.split('.').every(octet => {
+                            const num = parseInt(octet);
+                            return num >= 0 && num <= 255;
+                        });
+                    }
+
+                    async submitGatewayForm() {
+                        const formData = new FormData();
+                        let hasValidationError = false;
+
+                        // Explicitly set each gateway value in the correct order
+                        for (let i = 1; i <= 10; i++) {
+                            const key = `gateway${i}`;
+                            const input = document.getElementById(key);
+                            const value = input.value.trim();
+
+                            if (value && !this.validateIPAddress(value)) {
+                                hasValidationError = true;
+                                input.classList.add('is-invalid');
+                                Swal.fire('Error', `Invalid IP address for ${key}`, 'error');
                                 return;
                             }
-                    
-                            try {
-                                const response = await fetch('/set_gateways', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/x-www-form-urlencoded',
-                                    },
-                                    body: new URLSearchParams(updatedIPs)
-                                });
-                    
-                                if (!response.ok) throw new Error('Network response was not ok');
-                    
-                                await response.json();
-                                Swal.fire('Success', 'Gateway IPs updated successfully', 'success');
-                                this.gatewayIPs = {...this.gatewayIPs, ...updatedIPs};
-                                
-                                // Check status of all gateways after successful update
-                                await this.checkAllGateways();
-                            } catch (error) {
-                                console.error('Error:', error);
-                                Swal.fire('Error', 'There was an issue updating the Gateway IPs', 'error');
+                            
+                            // Always append the key to FormData, even if empty
+                            formData.append(key, value);
+                            if (value) {
+                                input.classList.remove('is-invalid');
                             }
                         }
-                    
-                        init() {
-                            this.createGatewayInputs();
-                            document.querySelector('#gatewayForm button')
-                                .addEventListener('click', () => this.submitGatewayForm());
+
+                        if (hasValidationError) return;
+                        console.log(formData)
+                        try {
+                            const response = await fetch('/set_gateways', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            if (!response.ok) throw new Error('Network response was not ok');
+
+                            await response.json();
+                            Swal.fire('Success', 'Gateway IPs updated successfully', 'success');
                             
-                            // Add input event listeners for real-time status checking
-                            Object.keys(this.gatewayIPs).forEach(key => {
-                                const input = document.getElementById(key);
+                            // Update local state with new values
+                            for (let i = 1; i <= 10; i++) {
+                                const key = `gateway${i}`;
+                                this.gatewayIPs[key] = document.getElementById(key).value.trim();
+                            }
+                            
+                            // Check status of all gateways after successful update
+                            await this.checkAllGateways();
+                        } catch (error) {
+                            console.error('Error:', error);
+                            Swal.fire('Error', 'There was an issue updating the Gateway IPs', 'error');
+                        }
+                    }
+
+
+                    setupEventListeners() {
+                        document.querySelector('#gatewayForm button')
+                            .addEventListener('click', () => this.submitGatewayForm());
+                        
+                        Object.keys(this.gatewayIPs).forEach(key => {
+                            const input = document.getElementById(key);
+                            if (input) {
                                 input.addEventListener('change', async () => {
                                     const ip = input.value.trim();
                                     if (ip) {
@@ -874,18 +877,37 @@
                                         this.updateStatusIndicator(key, false);
                                     }
                                 });
-                            });
-                    
-                            // Initial status check
-                            this.checkAllGateways();
+                            }
+                        });
+                    }
+                    async loadGatewayIPs() {
+                        try {
+                            const response = await fetch('/get_gateways');
+                            if (!response.ok) throw new Error('Failed to fetch gateway IPs');
+                            
+                            const data = await response.json();
+                            this.gatewayIPs = data;
+                        } catch (error) {
+                            console.error('Error loading gateway IPs:', error);
+                            Swal.fire('Error', 'Failed to load gateway configurations', 'error');
                         }
                     }
-                    
-                    // Initialize the gateway manager
-                    document.addEventListener('DOMContentLoaded', () => {
-                        new GatewayManager();
-                    });
-                    </script> 
+
+                    async init() {
+                        await this.loadGatewayIPs();  // Load IPs first
+                        this.createGatewayInputs();    // Then create inputs with loaded values
+                        this.setupEventListeners();
+                        await this.checkAllGateways(); // Check gateway statuses
+                    }
+
+                }
+
+                // Initialize the gateway manager
+                document.addEventListener('DOMContentLoaded', () => {
+                    new GatewayManager();
+                });
+                </script>
+                
                 </div>
             </section>            
 
