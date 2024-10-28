@@ -80,6 +80,8 @@ The 'Configure LoRaWAN Gateway' section allows you to set up to ten Dragino LPS8
 
 ![gateways](./doc/img/gateways.png)
 
+The gateway configuration will automatically be saved to a file named 'gateway_config.json'.  This file gets loaded each time the application runs.  If you would like to save multiple configurations, copy the 'gateway_config.json' to a new file for later use.
+
 ## Analysis Mode
 
 Analyze LoRa traffic received at 433, 868, or 915 MHz with ‘Analysis Mode’. Click the desired frequency to get started.  Once connected to your LoRa receiver, traffic will automatically be streamed to the web page for analysis. To disconnect a receiver, click the 'Disconnect Serial Port' button.
