@@ -14,6 +14,9 @@ from io import StringIO, BytesIO
 import csv
 import serial.tools.list_ports
 from ipaddress import ip_address, AddressValueError
+import os
+import json
+
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -41,6 +44,7 @@ frequency = lambda port: {'port1': 433, 'port2': 868,'port3': 915}.get(port, Non
 surveydata = {}
 parsed_entries = set()
 used_ports = set()
+CONFIG_FILE = 'gateway_config.json'
 
 def read_serial_data(port, ser, buffer):
     """
@@ -728,24 +732,62 @@ def set_gateways():
     global gateway_ips
     data = request.form
     
-    # Create an ordered dictionary of gateways
+    # Update gateway IPs
     ordered_gateways = {}
     for i in range(1, 11):
         key = f'gateway{i}'
         input_ip = data.get(key, '').strip()
-        ordered_gateways[key] = input_ip
+        ordered_gateways[key] = input_ip if input_ip else ''
         
-    # Update the global gateway_ips with ordered data
     gateway_ips.update(ordered_gateways)
 
     for gateway, ip_address in gateway_ips.items():
         print(f"Gateway {gateway} has IP address: {ip_address}")
-
-    return jsonify({"message": "Gateway IPs updated successfully"}), 200
+    
+    # Save configuration
+    if save_gateway_config():
+        return jsonify({"message": "Gateway IPs updated and saved successfully"}), 200
+    else:
+        return jsonify({"message": "Gateway IPs updated but failed to save configuration"}), 200
 
 @app.route('/get_gateways', methods=['GET'])
 def get_gateways():
+    """
+    Retrieves the current IP addresses of the gateways.
+
+    This function handles the '/get_gateways' URL route and returns a JSON
+    response containing the IP addresses of the configured gateways.
+
+    Returns:
+    Response: A JSON response with the current gateway IPs, where each key is
+              a gateway identifier and the value is the corresponding IP address.
+    """
     return jsonify(gateway_ips)
+
+def save_gateway_config():
+    """
+    Saves the current gateway configuration to a JSON file.
+    """
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(gateway_ips, f)
+        return True
+    except Exception as e:
+        print(f"Error saving gateway configuration: {e}")
+        return False
+
+def load_gateway_config():
+    """
+    Loads the gateway configuration from a JSON file.
+    """
+    global gateway_ips
+    try:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                loaded_config = json.load(f)
+                gateway_ips.update(loaded_config)
+    except Exception as e:
+        print(f"Error loading gateway configuration: {e}")
 
 @app.route('/downloadPackets', methods=['GET'])
 def downloadPackets():
@@ -772,5 +814,6 @@ def downloadPackets():
 
 
 if __name__ == '__main__':
+    load_gateway_config()
     Timer(30, parse_and_store_data).start()
     socketio.run(app, debug=True)
