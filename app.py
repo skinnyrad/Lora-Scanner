@@ -386,7 +386,7 @@ def index():
     Returns:
     str: The rendered HTML content for the index page.
     """
-    return render_template('index.html')
+    return render_template('index.html', gateway_ips=gateway_ips)
 
 @app.route('/analysis')
 def analysis():
@@ -727,20 +727,25 @@ def set_gateways():
     """
     global gateway_ips
     data = request.form
-    for key in [f'gateway{i}' for i in range(1, 11)]:
+    
+    # Create an ordered dictionary of gateways
+    ordered_gateways = {}
+    for i in range(1, 11):
+        key = f'gateway{i}'
         input_ip = data.get(key, '').strip()
-        if input_ip:
-            try:
-                ipaddress.ip_address(input_ip)
-                gateway_ips[key] = input_ip
-            except ValueError:
-                return jsonify({"error": f"Invalid IP address provided for {key}"}), 400
+        ordered_gateways[key] = input_ip
+        
+    # Update the global gateway_ips with ordered data
+    gateway_ips.update(ordered_gateways)
 
     for gateway, ip_address in gateway_ips.items():
         print(f"Gateway {gateway} has IP address: {ip_address}")
 
     return jsonify({"message": "Gateway IPs updated successfully"}), 200
 
+@app.route('/get_gateways', methods=['GET'])
+def get_gateways():
+    return jsonify(gateway_ips)
 
 @app.route('/downloadPackets', methods=['GET'])
 def downloadPackets():

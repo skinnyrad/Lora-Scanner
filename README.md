@@ -71,11 +71,12 @@ From the configuration page, you can connect to a LoRa transmitter to start send
 
 The 'Configure LoRaWAN Gateway' section allows you to set up to ten Dragino LPS8N LoRaWAN gateways.
 
-- Click the "Configure Gateway" button to start configuring each gateway's IP address.
-- Skip configuring a gateway or disconnect an existing one by leaving the input field empty.
+- Click the "Update Gateways" button to update each gateway's IP address.
+- Skip configuring a gateway by leaving the input field empty.
 - All entered IP addresses are validated for correct formatting.
 - Once configured, the application automatically retrieves and stores LoRaWAN traffic from each active gateway.
 - Access and analyze stored traffic in 'survey mode'.
+
 
 ![gateways](./doc/img/gateways.png)
 
