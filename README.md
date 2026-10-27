@@ -1,130 +1,94 @@
-# Skinny R&D Lora Scanner 
+# Skinny R&D Lora Scanner
 
-![lora-main](./doc/img/lora-main.png)
+A single-binary web application for monitoring and analyzing LoRa (Long Range) wireless traffic. The backend is Go ([gin](https://github.com/gin-gonic/gin)); the frontend is React with [MUI](https://mui.com), built with [bun](https://bun.sh) and embedded in the binary. It needs no internet access to run.
 
-## Introduction
-The Lora Scanner is a Flask web application integrated with SocketIO, designed for monitoring and analyzing LoRa (Long Range) wireless communication.
+![Frames](./doc/img/frames.png)
 
 ## Features
 
-* **Packet Streaming**: View a live stream of each raw LoRa packet captured and received by the LoRa Scanner with `Analysis Mode`.
-* **Supported Frequencies**: Capture packets at 915, 868, or 433 MHz
-* **Device Tracking**: Track down LoRa Devices in the area using `Tracking Mode`.
-* **Packet Analysis**: View every packet captured by the LoRa scanner with `Survey Mode`.
-* **Exporting Data**: Perform AI powered data analysis on LoRa packets by downloading them from the `Survey Mode` page.
-* **LoRaWAN Support**: Integrated LoRaWAN support with the Dragino LPS8N Indoor LoRaWAN Gateway.
-* **Hardware Support**: The LoRa Scanner is currently designed to work with an `Adafruit Feather M0` or `32u4`.
+* **Live frames**: a Wireshark-style list of everything received (raw serial lines, decoded LoRa packets, LoRaWAN gateway traffic) with filtering, pause/follow and CSV export.
+* **Devices**: a live table of every device heard, with frequency, signal strength, first/last seen and frame count.
+* **Any number of transceivers**: add as many Feathers as you like; each one's frequency (433, 868, 915 MHz, ...) is detected automatically from the firmware's boot banner. View any device's raw serial output.
+* **Transmit**: one-off messages and server-side beacons that keep running when the page is closed.
+* **LoRaWAN gateways**: add any number of Dragino LPS8N gateways; their traffic logs are polled on a configurable interval.
+* **Hardware**: an `Adafruit Feather M0` or `32u4` running the [Skinny LoRa](https://github.com/skinnyrad/Skinny-LoRa) firmware (steps 1-2 in its README). *For 433 MHz you need the `Adafruit Feather M0 LoRa 433 MHz`.*
 
-## Installation
+## Build and run
 
-### Hardware Requirements
+Requires Go 1.24+ and [bun](https://bun.sh).
 
-Flash your Adafruit Feather M0 (or 32u4) with the Skinny LoRa firmware.  You can attach up to three different receivers at a time.  For instructions, please follow the steps 1-2 [here](https://github.com/skinnyrad/Skinny-LoRa). 
+```
+make build          # bun builds web/dist, then go build -> ./lora-scanner
+./lora-scanner      # http://localhost:5000
+```
 
-*Note: For 433 MHz analysis you need the `Adafruit Feather M0 LoRa 433 MHz`*
+The result is one self-contained binary. The frontend uses no CDNs or web fonts, and `make build` fails if it ever references anything that isn't embedded. Every route under `/api` is the JSON/WebSocket API; any other URL serves the web interface.
 
-### Prerequisites
-- Python 3.x
-- pip (Python package manager)
-- Virtual environment (recommended)
+Options:
 
-### Setup For Linux, MacOS, and Windows 
-1. Navigate to the application directory:
-   ```
-   cd lora-scanner
-   ```
-2. Create a virtual environment (optional):
-   ```
-   python -m venv venv
-   ```
-3. Activate the virtual environment (optional):
+| Option | Default | Purpose |
+|---|---|---|
+| `--addr` / `LORA_ADDR` | `:5000` | listen address |
+| `--config` / `LORA_CONFIG` | `gateways.json` in the per-user config directory | gateway list and poll interval |
+| `LORA_GATEWAY_USER` / `LORA_GATEWAY_PASS` | `root` / `dragino` | gateway web login |
 
-- Windows: `venv\Scripts\activate`
-- macOS/Linux: `source venv/bin/activate`
+The config directory is `~/.config/lora-scanner/` on Linux, `~/Library/Application Support/lora-scanner/` on macOS and `%AppData%\lora-scanner\` on Windows, so the binary can live anywhere, including a read-only `bin`. On first run, an old `gateway_config.json` in the working directory is imported if present (and never modified).
 
-4. Install the required packages:
-   ```
-   pip install -r requirements.txt
-   ```
+Development: `make dev` runs the API; in another shell `cd web && bun run dev` (the Bun dev server on :5173 proxies `/api` to port 5000). Tests: `make test`.
 
 ## Usage
 
-1. Run the application:
-```bash
-python app.py
-```
-2. Access the web interface at `http://localhost:5000`.
+*The screenshots below were taken against simulated Feathers and a stand-in gateway.*
 
-![scanner-main](./doc/img/lora-main.png)
+### Configuration
 
+![Configuration](./doc/img/configuration.png)
 
-## Configuration
+Click *Add Transceiver* and pick the serial port of a Feather. Its frequency shows up once the firmware reports it (the Feather prints it once at boot, so replug a board that shows "Detecting…"). Add as many as you like, including several on the same band.
 
-![config](./doc/img/config.png)
+*View Serial* shows everything a device prints, read-only:
 
-From the configuration page, you can connect to a LoRa transmitter to start sending and receiving messages. Select the desired frequency to begin. Click the 'Select Device' button to connect to a serial port on your computer (where your Feather is attached). Once connected, traffic from your LoRa receiver will automatically stream to the web page for analysis. To disconnect a receiver, click the 'Disconnect Device' button. You can connect up to three LoRa transmitters at once.
+![Serial output](./doc/img/serial.png)
 
-![config](./doc/img/select-device.png)
+Add Dragino gateways by IP, with no limit. A gateway turns red after two failed polls in a row and is retried every 5 seconds until it answers; green means its last poll worked, and grey means it hasn't been polled yet. The poll interval (5-3600 seconds, default 30) is set here too.
 
+### Frames
 
-#### Configure LoRaWAN Gateways
+![Frames](./doc/img/frames.png)
 
-The 'Configure LoRaWAN Gateway' section allows you to set up to ten Dragino LPS8N LoRaWAN gateways.
+Every frame as it arrives: raw serial lines, decoded LoRa packets and LoRaWAN gateway rows (the last 10,000 are kept). Filter by text or kind (LoRa, LoRaWAN, Raw), select a row for its details, pause the view, or download everything as CSV. *Follow* keeps the newest frame in view and switches itself off when you scroll up.
 
-- Click the "Update Gateways" button to update each gateway's IP address.
-- Skip configuring a gateway by leaving the input field empty.
-- All entered IP addresses are validated for correct formatting.
-- Once configured, the application automatically retrieves and stores LoRaWAN traffic from each active gateway.
-- Access and analyze stored traffic in 'survey mode'.
+### Devices
 
+![Devices](./doc/img/devices.png)
 
-![gateways](./doc/img/gateways.png)
+A live table of every device heard: identifier, frequency, signal strength, first and last seen, and how many frames it has sent. Select a device to jump to its frames.
 
-The gateway configuration will automatically be saved to a file named 'gateway_config.json'.  This file gets loaded each time the application runs.  If you would like to save multiple configurations, copy the 'gateway_config.json' to a new file for later use.
+### Transmit
 
-## Analysis Mode
+![Transmit](./doc/img/transmit.png)
 
-Analyze LoRa traffic received at 433, 868, or 915 MHz with ‘Analysis Mode’. Click the desired frequency to get started.  Once connected to your LoRa receiver, traffic will automatically be streamed to the web page for analysis. To disconnect a receiver, click the 'Disconnect Serial Port' button.
+The only place anything is transmitted. Send a message from a chosen transceiver, or start a beacon that repeats it every N milliseconds (minimum 1000) to probe nearby devices. Beacons run on the server and keep going if you close the page.
 
-![analysis-mode](./doc/img/analysis-mode.png)
+## API
 
-![connect-main](./doc/img/connect-main.png)
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/ports` | serial ports on this machine |
+| `GET/POST /api/transceivers` `{port}` | list / add a Feather; its frequency is detected from the firmware's `Freq set to:` boot line |
+| `DELETE /api/transceivers/{id}` | remove |
+| `POST /api/transceivers/{id}/transmit` `{text}` | send `TX:<text> ` |
+| `GET/POST/DELETE /api/transceivers/{id}/beacon` | server-side periodic transmit (`{text, intervalMs>=1000}`) |
+| `GET/PUT /api/gateways/poll` `{seconds}` | how often gateways are polled |
+| `GET/POST /api/gateways` `{ip}`, `DELETE /api/gateways/{ip}`, `GET /api/gateways/status` | gateway list and each gateway's state from its last poll (`online`/`offline`/`unknown`, with the error) |
+| `GET /api/frames?after=<id>`, `DELETE /api/frames`, `GET /api/frames.csv` | received frames (last 10,000 kept) |
+| `GET /api/devices` | devices aggregated from frames |
+| `GET /api/ws` | WebSocket: live `transceivers`, `gateways` (state changes), `frame` and `device` messages |
 
-You can view and inspect any received packets from the analysis window in the appropriate section:
+## SDR companion
 
-![analysis-mode-2](./doc/img/analysis-mode-2.png)
+`sdr-companion/` has GNU Radio tooling for capturing LoRa with an SDR; see [`sdr-companion/sdr-companion.md`](./sdr-companion/sdr-companion.md).
 
-From analysis mode you can also transmit a message at the desired frequency using the ‘Transmit Data’ button.  
+## License
 
-![transmit](./doc/img/transmit.png)
-
-## Tracking Mode
-
-Tracking mode allows you to track down rogue LoRa transmitters by locking in on a particular LoRa device and receiving live updates of their RSSI values.  From the main tracking mode screen, click the row containing the LoRa transmitter you are searching for and it will lock in on that particular device for seamless tracking.
-
-![tracking-mode](./doc/img/tracking-mode.png)
-
-If you toggle the beacon buttons at the bottom of the screen, you will find a similar interface to the ‘Analysis Mode’ page.  From this window you will be able to see live traffic received from the LoRa transceivers you have attached to the scanner.  If you would like to beacon a message at a desired frequency, you can use the ‘Start Beacon’ and ‘Stop Beacon’ buttons.  This will allow you to transmit a custom LoRa message at any desired interval , in an attempt to probe any LoRa devices that might be listening for messages:
-
-![transmit-interval](./doc/img/transmit-interval.png)
-
-## Survey Mode
-
-Survey mode allows you to view all of the devices and corresponding packets discovered by the LoRa scanner.
-
-![survey](./doc/img/survey-mode.png)
-
-From the main ‘Survey Mode’ screen, you can view plaintext messages that were successfully decoded by the LoRa scanner using the ‘Show Values’ button next to a desired LoRa device.  After clicking the button, all of the messages captured from that particular device will be displayed.  Each row represents a single message captured from that device.
-
-![survey-packets](./doc/img/survey-packets.png)
-
-To collapse the packet list, click the ‘Hide Values’ button.
-
-![survey-collapse](./doc/img/survey-collapse.png)
-
-## Exporting LoRa Traffic
-
-To download all packets captured by the LoRa Scanner, click the ‘Download Packets’ button.  This will export all packets into a CSV file.
-
-![export-packets](./doc/img/download-packets.png)
-
+MIT, see [LICENSE](./LICENSE).
