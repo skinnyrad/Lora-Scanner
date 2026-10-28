@@ -85,10 +85,6 @@ The only place anything is transmitted. Send a message from a chosen transceiver
 | `GET /api/devices` | devices aggregated from frames |
 | `GET /api/ws` | WebSocket: live `transceivers`, `gateways` (state changes), `frame` and `device` messages |
 
-## SDR companion
-
-`sdr-companion/` has GNU Radio tooling for capturing LoRa with an SDR; see [`sdr-companion/sdr-companion.md`](./sdr-companion/sdr-companion.md).
-
 ## License
 
 MIT, see [LICENSE](./LICENSE).
